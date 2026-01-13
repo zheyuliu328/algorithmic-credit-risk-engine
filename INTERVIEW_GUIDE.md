@@ -1,20 +1,24 @@
-# 🎤 Interview Preparation Guide
+# Interview Preparation Guide
 
 **Algorithmic Credit Risk Engine - Technical Interview Talking Points**
 
+This document contains interview preparation materials, resume descriptions, and technical talking points. Keep this private for your reference.
+
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Project Overview (30-Second Pitch)](#project-overview)
-2. [Technical Deep-Dive Questions](#technical-deep-dive)
-3. [Architecture & Design Decisions](#architecture-design)
-4. [Business Impact & Use Cases](#business-impact)
-5. [Common Follow-Up Questions](#follow-up-questions)
+2. [Resume / LinkedIn Descriptions](#resume-descriptions)
+3. [Interview Talking Points](#interview-talking-points)
+4. [Technical Deep-Dive Questions](#technical-deep-dive)
+5. [Architecture & Design Decisions](#architecture-design)
+6. [Business Impact & Use Cases](#business-impact)
+7. [Common Follow-Up Questions](#follow-up-questions)
 
 ---
 
-## 🎯 Project Overview (30-Second Pitch)
+## Project Overview (30-Second Pitch)
 
 ### Elevator Pitch
 
@@ -27,14 +31,63 @@
 > The key innovation is the **circuit breaker architecture**—if the external API fails, the system seamlessly degrades to simulated data, ensuring zero downtime. This demonstrates production-grade reliability thinking."
 
 **Key Points to Emphasize:**
-- ✅ Production-ready architecture (not just a demo)
-- ✅ Real-time data integration with fallback mechanisms
-- ✅ Model explainability (SHAP) for regulatory compliance
-- ✅ Interactive stress testing for risk management
+- Production-ready architecture (not just a demo)
+- Real-time data integration with fallback mechanisms
+- Model explainability (SHAP) for regulatory compliance
+- Interactive stress testing for risk management
 
 ---
 
-## 🔬 Technical Deep-Dive Questions
+## Resume / LinkedIn Descriptions
+
+### Short Version (One-Liner)
+
+> **"Built a Basel III-compliant credit risk engine using XGBoost & SHAP, integrated real-time HKEX market data via Yahoo Finance API with circuit breaker architecture, and developed an interactive stress testing dashboard to simulate macroeconomic shocks on Probability of Default."**
+
+### Detailed Version
+
+> **"Algorithmic Credit Risk Engine with Live Market Data Feed"**
+> 
+> - Developed a production-ready credit risk management system combining **IFRS 9 ECL pipeline** (SQL-based) and **SME default prediction engine** (XGBoost-based)
+> - Implemented **real-time HKEX market data integration** via Yahoo Finance API with **circuit breaker pattern** for high availability
+> - Built **interactive stress testing dashboard** (Streamlit) enabling users to simulate macroeconomic shocks and observe real-time PD recalculation
+> - Integrated **SHAP explainability** to decompose individual predictions into risk factor contributions, generating business-friendly credit memos
+> - Designed **multi-layer resilience architecture**: data caching (95% API call reduction), exponential backoff retry logic, and graceful degradation to simulated data
+
+---
+
+## Interview Talking Points
+
+### For Module A (IFRS 9 ECL)
+
+> "I built a database-centric IFRS 9 ECL pipeline that mirrors real banking environments. Instead of doing everything in Pandas RAM, I used **SQL** for ETL, feature engineering, and IFRS 9 staging logic, and **Python** only for statistical modeling. This ensures scalability, auditability, and integration with downstream systems."
+
+**Key Skills Demonstrated:**
+- SQL proficiency (complex queries, CASE WHEN, aggregations)
+- Python statistical modeling (scikit-learn)
+- Database integration (SQLite → Oracle/Teradata ready)
+- Domain knowledge (IFRS 9 ECL framework, Basel III)
+
+### For Module B (SME Risk Engine)
+
+> "I developed an end-to-end credit risk engine for SMEs with three key innovations:
+> 
+> 1. **Real-time market data integration**: The system connects to HKEX via Yahoo Finance API, pulling live stock prices and financial statements. I implemented a circuit breaker pattern to ensure high availability—if the API fails, the system seamlessly degrades to simulated data.
+> 
+> 2. **Interactive stress testing**: Users can simulate macroeconomic shocks (revenue decline, volatility spikes) and see real-time PD recalculation. This demonstrates how the model responds to adverse scenarios.
+> 
+> 3. **Model explainability**: Using SHAP, I decompose individual predictions into risk factor contributions. The system generates business-friendly credit memos that explain *why* an entity is risky, not just *that* it's risky."
+
+**Key Skills Demonstrated:**
+- Machine Learning (XGBoost, imbalanced classification)
+- Model Explainability (SHAP)
+- API Integration (Yahoo Finance, error handling)
+- Full-Stack Development (Streamlit dashboard)
+- Production Architecture (Circuit Breaker, Caching, Retry Logic)
+
+---
+
+## Technical Deep-Dive Questions
 
 ### Q1: "Why XGBoost over Logistic Regression?"
 
@@ -128,7 +181,7 @@
 
 ---
 
-## 🏗️ Architecture & Design Decisions
+## Architecture & Design Decisions
 
 ### Q5: "Why separate SQL and Python instead of doing everything in Python?"
 
@@ -199,7 +252,7 @@
 
 ---
 
-## 💼 Business Impact & Use Cases
+## Business Impact & Use Cases
 
 ### Q7: "What's the business value of this system?"
 
@@ -275,7 +328,7 @@
 
 ---
 
-## ❓ Common Follow-Up Questions
+## Common Follow-Up Questions
 
 ### Q9: "What would you improve if you had more time?"
 
@@ -330,7 +383,7 @@
 
 ---
 
-## 🎯 Final Tips
+## Final Tips
 
 ### Before the Interview
 
@@ -353,7 +406,7 @@
 
 ---
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **SHAP Documentation**: https://shap.readthedocs.io/
 - **XGBoost Guide**: https://xgboost.readthedocs.io/
@@ -362,5 +415,4 @@
 
 ---
 
-**Good luck! You've built something impressive. Now go show them what you can do.** 🚀
-
+**Good luck! You've built something impressive. Now go show them what you can do.**
