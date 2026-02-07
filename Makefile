@@ -42,8 +42,12 @@ demo: ## Run demo with sample data
 quickstart: ## Quick start (default offline)
 	$(MAKE) demo
 
-run-real: ## Run with real data
-	python run.py validate
+run-real: ## Run with real data (usage: make run-real CSV=path/to/data.csv)
+	@if [ -z "$(CSV)" ]; then \
+		echo "Usage: make run-real CSV=path/to/data.csv"; \
+		exit 1; \
+	fi
+	python scripts/run_real.py $(CSV) --output artifacts
 
 verify: ## Run full verification suite
 	@bash ../scripts/verify.sh
