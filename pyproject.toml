@@ -5,13 +5,13 @@ build-backend = "hatchling.build"
 [project]
 name = "credit-risk-engine"
 version = "2.0.0"
-description = "Production-grade credit risk system with Basel III / IFRS 9 / SR 11-7 compliance"
+description = "Production-grade credit risk system with model validation and monitoring capabilities"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
     {name = "Zheyu Liu", email = "zheyuliu328@gmail.com"}
 ]
-keywords = ["credit-risk", "basel-iii", "ifrs9", "model-validation", "pd-prediction"]
+keywords = ["credit-risk", "model-validation", "pd-prediction", "risk-modeling"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
@@ -54,7 +54,7 @@ Documentation = "https://github.com/zheyuliu328/algorithmic-credit-risk-engine#r
 Repository = "https://github.com/zheyuliu328/algorithmic-credit-risk-engine"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/credit_risk_engine"]
+packages = ["src/credit_one"]
 
 [tool.black]
 line-length = 100
@@ -76,4 +76,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--cov=credit_risk_engine --cov-report=term-missing"
+addopts = "--cov=credit_one --cov-report=term-missing"
