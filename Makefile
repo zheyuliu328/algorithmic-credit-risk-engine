@@ -37,7 +37,7 @@ config-check: ## Check configuration
 	python config/validator.py config/config.yaml 2>/dev/null || echo "Config check not available"
 
 demo: ## Run demo with sample data
-	python run.py demo
+	python src/credit_one/run.py demo
 
 quickstart: ## Quick start (default offline)
 	$(MAKE) demo
