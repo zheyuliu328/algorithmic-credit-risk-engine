@@ -1,4 +1,4 @@
-.PHONY: help install build test lint format clean docker-build docker-run demo
+.PHONY: help install build test lint format clean docker-build docker-run demo quickstart
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -21,7 +21,6 @@ test-cov: ## Run tests with coverage
 
 lint: ## Run linters
 	ruff check .
-	mypy .
 
 format: ## Format code
 	black .
@@ -41,17 +40,21 @@ docker-run: ## Run Docker container
 docker-run-bash: ## Run Docker container with bash
 	docker run -it credit-risk-engine:latest bash
 
-demo: ## Run demo (model validation)
-	python model_validation.py
+demo: ## Run demo with synthetic data (safe, no API key needed)
+	python run.py demo
 
-validate: ## Run full validation suite
-	python model_validation.py
-	python psi_monitoring.py
+validate: ## Run model validation
+	python run.py validate
+
+validate-dry: ## Run validation (dry run, no side effects)
+	python run.py validate --dry-run
 
 dashboard: ## Launch Streamlit dashboard
-	streamlit run app.py
+	python run.py dashboard
 
-quickstart: ## Quick start: install, validate, and launch
+quickstart: ## Quick start: install + demo (1 minute)
 	$(MAKE) install
 	$(MAKE) demo
-	@echo "✅ Demo complete! Run 'make dashboard' to launch UI."
+	@echo ""
+	@echo "✅ Quick start complete!"
+	@echo "Next: Run 'make dashboard' to launch UI or 'make validate' for full validation"
