@@ -49,6 +49,9 @@ validate: ## Run model validation
 validate-dry: ## Run validation (dry run, no side effects)
 	python run.py validate --dry-run
 
+config-check: ## Check configuration
+	python config/validator.py config/config.yaml
+
 dashboard: ## Launch Streamlit dashboard
 	python run.py dashboard
 
