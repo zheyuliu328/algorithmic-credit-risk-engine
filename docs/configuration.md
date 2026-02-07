@@ -52,7 +52,7 @@ data_sources:
     port: 5432
     database: "credit_db"
     username: "${DB_USER}"
-    password: "${DB_PASSWORD}"
+    password: "${DB_PASS}"  # Use environment variable
 ```
 
 ---
