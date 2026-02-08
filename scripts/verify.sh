@@ -70,7 +70,10 @@ fi
 # 4. Check tests
 echo ""
 echo "[4/8] Running tests..."
-if pytest tests/ -v > /dev/null 2>&1 || python -m pytest tests/ -v > /dev/null 2>&1; then
+# Ensure we run from repo root to find tests correctly
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$REPO_ROOT"
+if python -m pytest -q > /dev/null 2>&1; then
     pass "Unit tests"
 else
     warn "Unit tests (optional)"
