@@ -22,7 +22,7 @@ jobs:
     - name: Lint with ruff
       run: ruff check . --fix || true
     - name: Format check
-      run: black --check . || true
+      run: black --check . || echo "Format issues found"
 
   test:
     runs-on: ubuntu-latest
