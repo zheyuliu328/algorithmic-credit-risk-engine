@@ -13,6 +13,9 @@ imbalanced-learn>=0.10.0
 # Model Explainability
 shap>=0.41.0
 
+# Regulatory Compliance & Scorecard
+optbinning>=0.19.0
+
 # Interactive Dashboard
 streamlit>=1.30.0
 plotly>=5.0.0

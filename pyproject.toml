@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "algorithmic-credit-risk-engine"
+version = "1.0.0"
+description = "Credit risk scoring engine with ML"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "scikit-learn>=1.3",
+    "xgboost>=2.0",
+    "shap>=0.42",
+    "flask>=2.3",
+    "plotly>=5.15",
+    "pytest>=7.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest-cov",
+    "black",
+    "ruff",
+    "mypy",
+    "pre-commit",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
