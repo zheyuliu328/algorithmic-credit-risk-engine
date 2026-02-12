@@ -1,0 +1,11 @@
+{
+  "mode": "DEMO",
+  "timestamp": "2024-01-01T00:00:00",
+  "model": "XGBoost_PD_Model",
+  "metrics": {
+    "auc": 0.87,
+    "ks": 0.52,
+    "gini": 0.74
+  },
+  "note": "Demo with synthetic data. Use real data for production."
+}

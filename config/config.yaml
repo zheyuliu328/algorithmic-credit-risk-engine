@@ -1,0 +1,40 @@
+# config.yaml - Credit Risk Engine Configuration
+# 复制本文件为 config.yaml 并修改
+
+version: "2.0.0"
+
+# 数据配置
+data:
+  input_path: "./data"
+  output_path: "./artifacts"
+  format: "csv"  # csv, parquet
+  
+# 模型配置
+model:
+  name: "XGBoost_PD_Model"
+  version: "v2.0"
+  random_seed: 42
+  
+# 评分卡配置
+scorecard:
+  base_score: 600
+  base_odds: 50
+  pdo: 20
+  
+# PSI监控配置
+psi:
+  stable_threshold: 0.10
+  warning_threshold: 0.25
+  
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "json"  # json, text
+  output: "./logs"
+  
+# 运行配置
+run:
+  dry_run: false
+  confirm: false
+  verbose: false
+  debug: false

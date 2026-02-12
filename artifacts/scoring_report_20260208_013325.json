@@ -1,0 +1,16 @@
+{
+  "run_id": "20260208_013325",
+  "version": "2.0.0",
+  "timestamp": "2026-02-08T01:33:25.241160",
+  "input_file": "data/sample_input.csv",
+  "rows_processed": 3,
+  "parameters": {
+    "model": "xgboost_v1"
+  },
+  "summary": {
+    "grade_distribution": {
+      "B": 3
+    },
+    "avg_pd": 0.14780000000000001
+  }
+}
