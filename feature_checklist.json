@@ -5,7 +5,7 @@
     "description": "Macro-economic data layer: synthetic generator + CSV loader with GDP, unemployment, interest rate",
     "status": "done",
     "completed_date": "2026-04-01",
-    "notes": "MacroDataGenerator with recession injection, MacroDataLoader with validation"
+    "notes": "Enhanced: bundled US FRED data (100Q), FREDDataLoader for live API, synthetic kept for tests"
   },
   {
     "id": "ECL-002",
@@ -21,7 +21,7 @@
     "description": "Multi-scenario projection engine: Base/Downside/Upside with configurable weights and horizon",
     "status": "done",
     "completed_date": "2026-04-01",
-    "notes": "Exponential convergence path generation, weight validation"
+    "notes": "Enhanced: VAR(p) model + Monte Carlo (2000 paths) + 5 percentile scenarios + fan charts"
   },
   {
     "id": "ECL-004",
@@ -29,7 +29,7 @@
     "description": "Model selection pipeline: evaluate all variable combos × lags × model types, rank by AIC/BIC/R²/RMSE/H-L",
     "status": "done",
     "completed_date": "2026-04-01",
-    "notes": "42 candidates evaluated, composite scoring, auto-select best model, CSV export"
+    "notes": "Enhanced: VIF screening, walk-forward CV (5 folds), Durbin-Watson, p-value rejection. R²=0.61 on real data"
   },
   {
     "id": "ECL-005",
@@ -45,7 +45,7 @@
     "description": "Visualization suite: model selection chart, PD term structure, ECL waterfall, sensitivity analysis",
     "status": "done",
     "completed_date": "2026-04-01",
-    "notes": "4 PNG charts saved to artifacts/"
+    "notes": "Enhanced: 5 charts (+ fan chart), 5-scenario colors, VIF/DW panels in model selection"
   },
   {
     "id": "ECL-007",
@@ -53,7 +53,7 @@
     "description": "ECL pipeline runner: end-to-end orchestrator integrating all components, accepts base_pd from CreditOne",
     "status": "done",
     "completed_date": "2026-04-01",
-    "notes": "Full pipeline verified: 12m ECL=$7,871 / Lifetime ECL=$24,887"
+    "notes": "Enhanced: real data default, VAR scenarios, 12m ECL=$8,752 / LT ECL=$24,969 on bundled US data"
   },
   {
     "id": "ECL-008",
@@ -83,8 +83,8 @@
     "id": "ECL-011",
     "category": "ecl/model_selection",
     "description": "Add probit to default model_types and walk-forward cross-validation option",
-    "status": "not_started",
-    "completed_date": null,
-    "notes": "Probit implemented but not in default pipeline; walk-forward would improve OOS evaluation"
+    "status": "done",
+    "completed_date": "2026-04-01",
+    "notes": "Walk-forward CV implemented (5 folds). Probit still not in default pipeline (binary threshold too lossy)."
   }
 ]

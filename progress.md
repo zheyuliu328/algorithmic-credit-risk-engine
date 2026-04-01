@@ -38,3 +38,48 @@
   - ECL-009: 集成到 run.py CLI
   - ECL-010: 集成到 Streamlit dashboard
   - ECL-011: 加 probit 到默认 model_types + walk-forward validation
+
+## Session: 2026-04-01 (ECL Enhanced — Real Data + VAR Scenarios + Robust Model Selection)
+
+- 完成:
+  - Fix 1: 替换合成数据为真实 US 宏观数据
+    - 创建 `data/us_macro_quarterly.csv` (FRED 2000Q1-2024Q4, 100 quarters)
+    - 新增 `FREDDataLoader` 类 (live API refresh, 需 fredapi + API key)
+    - `MacroDataLoader.load_bundled()` 作为默认数据源
+    - `MacroDataGenerator` 保留为测试 fixture
+  - Fix 2: VAR-based 情景引擎
+    - VAR(p) 模型拟合 (自动 AIC 选阶, 选出 VAR(2))
+    - Monte Carlo 模拟 2000 条路径
+    - 5 个百分位情景: severe_downside/downside/base/upside/severe_upside
+    - 路径级排序保持变量间相关性 (GDP↓→UR↑→IR↓)
+    - 概率权重从分布自动推导 (12.5/22.5/30/22.5/12.5)
+    - Fan chart 数据生成 + 可视化
+  - Fix 3: 增强模型选择
+    - VIF 多重共线性筛查 (阈值=5)
+    - Walk-forward CV 替代简单 train/test split (5 folds)
+    - Durbin-Watson 残差自相关检测
+    - 系数 p-value 显著性筛查 (阈值=0.10)
+    - Composite score 对 VIF/p-value flag 施加惩罚
+  - 集成层更新: runner/calculator/visualization 全面适配 5 场景
+  - pyproject.toml 加 fredapi optional dependency
+- 产出文件:
+  - `data/us_macro_quarterly.csv` (新)
+  - `scripts/generate_macro_data.py` (新)
+  - `src/credit_one/ecl/macro_data.py` (重写)
+  - `src/credit_one/ecl/scenario_engine.py` (重写)
+  - `src/credit_one/ecl/model_selection.py` (增强)
+  - `src/credit_one/ecl/runner.py` (更新)
+  - `src/credit_one/ecl/ecl_calculator.py` (更新)
+  - `src/credit_one/ecl/visualization.py` (重写)
+  - `artifacts/ecl_fan_chart.png` (新)
+- 关键结果:
+  - Adj R²: 0.90 (合成) → 0.61 (真实) — 符合预期
+  - Best model: linear|gdp_growth+unemployment_rate+interest_rate|lag0
+  - Max VIF: 1.6 (无共线性), DW: 0.23 (残差有自相关，真实数据正常)
+  - 12m ECL: $8,752 / LT ECL: $24,969 (on bundled US data)
+  - VAR order: 2 (AIC selected)
+  - 8/11 ECL features done (ECL-011 walk-forward 已完成)
+- 下一步:
+  - ECL-008: 补 unit/integration tests
+  - ECL-009: 集成到 run.py CLI
+  - ECL-010: 集成到 Streamlit dashboard
