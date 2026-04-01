@@ -1,0 +1,16 @@
+metric,value
+Base PD (TTC),5.0000%
+LGD,45%
+EAD,"$100,000"
+12-Month ECL (Stage 1),"$7,870.61"
+Lifetime ECL (Stage 2),"$24,886.84"
+Horizon (quarters),12
+base - 12m contribution,"$3,994.73"
+base - lifetime contribution,"$12,448.76"
+base - terminal cum PD,45.9682%
+downside - 12m contribution,"$2,059.82"
+downside - lifetime contribution,"$7,438.98"
+downside - terminal cum PD,45.9906%
+upside - 12m contribution,"$1,816.06"
+upside - lifetime contribution,"$4,999.11"
+upside - terminal cum PD,45.9649%

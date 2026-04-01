@@ -18,6 +18,7 @@ dependencies = [
     "flask>=2.3",
     "plotly>=5.15",
     "pytest>=7.4",
+    "statsmodels>=0.13.0",
 ]
 
 [project.optional-dependencies]
