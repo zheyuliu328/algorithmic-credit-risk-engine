@@ -1,43 +1,43 @@
-rank,model_label,model_type,variables,n_variables,lag,aic,bic,adj_r2,oos_rmse,hl_chi2,hl_p_value,composite_score,n_obs,log_likelihood
-1,linear|gdp_growth+unemployment_rate+interest_rate|lag0,linear,"gdp_growth, unemployment_rate, interest_rate",3,0,-189.067,-182.1164,0.900042,0.03105268,0.4032,0.999941,0.9379128150986142,42,98.5335
-2,linear|gdp_growth+unemployment_rate|lag0,linear,"gdp_growth, unemployment_rate",2,0,-187.3489,-182.1358,0.89359,0.04313177,0.5247,0.99984,0.9094980897649798,42,96.6744
-3,linear|gdp_growth+interest_rate|lag0,linear,"gdp_growth, interest_rate",2,0,-168.5354,-163.3224,0.833459,0.02252069,0.3281,0.999974,0.9073528743106873,42,87.2677
-4,linear|unemployment_rate|lag0,linear,unemployment_rate,1,0,-187.844,-184.3687,0.892465,0.04815604,0.5093,0.999857,0.9017095961866566,42,95.922
-5,linear|unemployment_rate+interest_rate|lag0,linear,"unemployment_rate, interest_rate",2,0,-185.8451,-180.6321,0.889711,0.04816404,0.5111,0.999855,0.8963206656047056,42,95.9225
-6,linear|gdp_growth|lag0,linear,gdp_growth,1,0,-157.4757,-154.0004,0.778401,0.01548121,0.5194,0.999846,0.8897294624316731,42,80.7379
-7,logistic|gdp_growth+unemployment_rate+interest_rate|lag0,logistic,"gdp_growth, unemployment_rate, interest_rate",3,0,-67.4634,-60.5128,0.961437,0.01459058,0.0088,1.0,0.7873676435209762,42,37.7317
-8,linear|gdp_growth+unemployment_rate|lag1,linear,"gdp_growth, unemployment_rate",2,1,-133.269,-128.1283,0.652339,0.02563207,0.8761,0.998916,0.7851347012819228,41,69.6345
-9,logistic|gdp_growth+unemployment_rate|lag0,logistic,"gdp_growth, unemployment_rate",2,0,-67.5935,-62.3805,0.960715,0.02204246,0.0136,1.0,0.7740033845938369,42,36.7968
-10,logistic|gdp_growth+interest_rate|lag0,logistic,"gdp_growth, interest_rate",2,0,-40.3819,-35.1689,0.924906,0.01654136,0.0117,1.0,0.7319318458592015,42,23.191
-11,logistic|gdp_growth|lag0,logistic,gdp_growth,1,0,-31.4763,-28.0009,0.905075,0.00855261,0.0069,1.0,0.7299614148640774,42,17.7381
-12,linear|interest_rate|lag0,linear,interest_rate,1,0,-123.5714,-120.0961,0.503236,0.03443525,0.8651,0.998966,0.7183170313428708,42,63.7857
-13,logistic|unemployment_rate+interest_rate|lag0,logistic,"unemployment_rate, interest_rate",2,0,-52.7101,-47.4971,0.944008,0.04597654,0.0388,1.0,0.6980771209393246,42,29.3551
-14,logistic|unemployment_rate|lag0,logistic,unemployment_rate,1,0,-42.6402,-39.1648,0.927232,0.04251017,0.0355,1.0,0.6859345508557675,42,23.3201
-15,linear|gdp_growth+interest_rate|lag1,linear,"gdp_growth, interest_rate",2,1,-130.6462,-125.5055,0.629372,0.0382921,1.4027,0.994209,0.68223585121555,41,68.3231
-16,linear|gdp_growth+unemployment_rate+interest_rate|lag1,linear,"gdp_growth, unemployment_rate, interest_rate",3,1,-142.5489,-135.6946,0.728821,0.03143338,1.8158,0.986146,0.6212386885137556,41,75.2744
-17,linear|interest_rate|lag1,linear,interest_rate,1,1,-109.3379,-105.9107,0.362394,0.05924549,0.6819,0.999571,0.6208987267373701,41,56.6689
-18,logistic|gdp_growth+unemployment_rate+interest_rate|lag1,logistic,"gdp_growth, unemployment_rate, interest_rate",3,1,16.3246,23.1789,0.720888,0.01378391,0.1372,0.999999,0.5947436541067846,41,-4.1623
-19,linear|unemployment_rate+interest_rate|lag1,linear,"unemployment_rate, interest_rate",2,1,-108.0527,-102.912,0.356925,0.07058756,0.7969,0.999235,0.5886790099578357,41,57.0263
-20,logistic|gdp_growth+unemployment_rate|lag1,logistic,"gdp_growth, unemployment_rate",2,1,16.8015,21.9422,0.711309,0.01942082,0.119,1.0,0.5818819036990188,41,-5.4007
-21,linear|gdp_growth|lag2,linear,gdp_growth,1,2,-94.1618,-90.7841,0.14875,0.04514472,0.3442,0.999968,0.5789985066760998,40,49.0809
-22,logistic|gdp_growth+interest_rate|lag1,logistic,"gdp_growth, interest_rate",2,1,17.3133,22.454,0.707683,0.028474,0.2692,0.999988,0.5619971297965327,41,-5.6567
-23,linear|interest_rate|lag2,linear,interest_rate,1,2,-94.8021,-91.4243,0.162267,0.05529778,0.6312,0.999678,0.5588811256359741,40,49.401
-24,linear|gdp_growth|lag1,linear,gdp_growth,1,1,-128.1232,-124.696,0.596756,0.04903007,1.7488,0.987769,0.5574068217445138,41,66.0616
-25,logistic|gdp_growth|lag1,logistic,gdp_growth,1,1,16.548,19.9751,0.70647,0.03530326,0.1982,0.999996,0.5508887211901561,41,-6.274
-26,logistic|interest_rate|lag0,logistic,interest_rate,1,0,22.1763,25.6517,0.659462,0.02556718,0.0497,1.0,0.5498728095639841,42,-9.0882
-27,linear|gdp_growth+unemployment_rate|lag2,linear,"gdp_growth, unemployment_rate",2,2,-92.3607,-87.2941,0.13008,0.05622243,0.4191,0.999932,0.5476662478804437,40,49.1804
-28,linear|gdp_growth+interest_rate|lag2,linear,"gdp_growth, interest_rate",2,2,-93.0221,-87.9555,0.144345,0.05321424,0.8633,0.998973,0.5442873595904966,40,49.5111
-29,linear|unemployment_rate|lag1,linear,unemployment_rate,1,1,-100.8536,-97.4264,0.215808,0.07993157,0.5547,0.999802,0.5342756967236528,41,52.4268
-30,linear|unemployment_rate+interest_rate|lag2,linear,"unemployment_rate, interest_rate",2,2,-93.9358,-88.8691,0.163668,0.07376973,0.4344,0.999922,0.523192136166592,40,49.9679
-31,linear|unemployment_rate|lag2,linear,unemployment_rate,1,2,-92.9356,-89.5578,0.12225,0.07595927,0.8719,0.998935,0.4944620327058232,40,48.4678
-32,linear|gdp_growth+unemployment_rate+interest_rate|lag2,linear,"gdp_growth, unemployment_rate, interest_rate",3,2,-92.4435,-85.6879,0.151278,0.09721084,0.4984,0.999868,0.46900525286479394,40,50.2217
-33,logistic|interest_rate|lag1,logistic,interest_rate,1,1,37.6121,41.0393,0.509346,0.05652968,0.0644,1.0,0.4273055232884547,41,-16.8061
-34,logistic|gdp_growth|lag2,logistic,gdp_growth,1,2,51.9714,55.3492,0.296031,0.03814899,0.2015,0.999996,0.38954451331800016,40,-23.9857
-35,logistic|unemployment_rate+interest_rate|lag1,logistic,"unemployment_rate, interest_rate",2,1,36.3695,41.5102,0.534726,0.09114829,0.2509,0.999991,0.36498337629500843,41,-15.1847
-36,logistic|gdp_growth+unemployment_rate|lag2,logistic,"gdp_growth, unemployment_rate",2,2,53.8001,58.8667,0.280095,0.0486593,0.2622,0.999989,0.3603662626597008,40,-23.9
-37,logistic|interest_rate|lag2,logistic,interest_rate,1,2,52.108,55.4857,0.293623,0.05378391,0.5868,0.999756,0.3541779799237861,40,-24.054
-38,logistic|gdp_growth+interest_rate|lag2,logistic,"gdp_growth, interest_rate",2,2,52.9991,58.0657,0.294368,0.04784645,1.0043,0.998221,0.3411710441245656,40,-23.4995
-39,logistic|unemployment_rate+interest_rate|lag2,logistic,"unemployment_rate, interest_rate",2,2,51.7114,56.778,0.316722,0.09006429,0.2613,0.999989,0.290136989213441,40,-22.8557
-40,logistic|unemployment_rate|lag1,logistic,unemployment_rate,1,1,47.8356,51.2628,0.370396,0.10480556,0.472,0.999893,0.2798916677396156,41,-21.9178
-41,logistic|gdp_growth+unemployment_rate+interest_rate|lag2,logistic,"gdp_growth, unemployment_rate, interest_rate",3,2,53.572,60.3275,0.300184,0.10908343,0.2837,0.999985,0.24387854426274097,40,-22.786
-42,logistic|unemployment_rate|lag2,logistic,unemployment_rate,1,2,55.6383,59.0161,0.228445,0.09083858,1.1552,0.997065,0.22030747262676606,40,-25.8192
+rank,model_label,model_type,variables,n_variables,lag,aic,bic,adj_r2,oos_rmse,hl_chi2,hl_p_value,max_vif,vif_flag,durbin_watson,max_coef_pvalue,pvalue_flag,composite_score,n_obs,log_likelihood
+1,linear|unemployment_rate|lag0,linear,unemployment_rate,1,0,-187.844,-184.3687,0.892465,0.0352661,0.5093,0.999857,0.0,False,1.2882,0.0,False,0.8108095291735659,42,95.922
+2,logistic|gdp_growth+unemployment_rate|lag0,logistic,"gdp_growth, unemployment_rate",2,0,-67.5935,-62.3805,0.960715,0.01355322,0.0136,1.0,4.42,False,1.5067,1e-06,False,0.7653875013954224,42,36.7968
+3,linear|gdp_growth|lag0,linear,gdp_growth,1,0,-157.4757,-154.0004,0.778401,0.03697296,0.5194,0.999846,0.0,False,1.4451,0.0,False,0.7616283449469842,42,80.7379
+4,logistic|unemployment_rate|lag0,logistic,unemployment_rate,1,0,-42.6402,-39.1648,0.927232,0.02008085,0.0355,1.0,0.0,False,2.0676,0.0,False,0.7599842048940973,42,23.3201
+5,logistic|unemployment_rate+interest_rate|lag0,logistic,"unemployment_rate, interest_rate",2,0,-52.7101,-47.4971,0.944008,0.0194635,0.0388,1.0,2.62,False,1.7601,0.000878,False,0.7550533399559219,42,29.3551
+6,linear|gdp_growth+interest_rate|lag0,linear,"gdp_growth, interest_rate",2,0,-168.5354,-163.3224,0.833459,0.03526697,0.3281,0.999974,5.01,True,2.1075,0.000539,False,0.72543034076411,42,87.2677
+7,linear|unemployment_rate+interest_rate|lag0,linear,"unemployment_rate, interest_rate",2,0,-185.8451,-180.6321,0.889711,0.03568994,0.5111,0.999855,2.62,False,1.281,0.974834,True,0.7235149926249843,42,95.9225
+8,linear|gdp_growth+unemployment_rate+interest_rate|lag0,linear,"gdp_growth, unemployment_rate, interest_rate",3,0,-189.067,-182.1164,0.900042,0.03519592,0.4032,0.999941,8.44,True,1.5761,0.068424,False,0.7235107898443752,42,98.5335
+9,linear|gdp_growth+unemployment_rate|lag0,linear,"gdp_growth, unemployment_rate",2,0,-187.3489,-182.1358,0.89359,0.03349948,0.5247,0.99984,4.42,False,1.1261,0.240166,True,0.7141611898569653,42,96.6744
+10,logistic|gdp_growth|lag0,logistic,gdp_growth,1,0,-31.4763,-28.0009,0.905075,0.02046558,0.0069,1.0,0.0,False,1.7052,0.0,False,0.7088010234987309,42,17.7381
+11,logistic|gdp_growth+interest_rate|lag0,logistic,"gdp_growth, interest_rate",2,0,-40.3819,-35.1689,0.924906,0.01578032,0.0117,1.0,5.01,True,1.9223,0.001565,False,0.6534919474387318,42,23.191
+12,linear|interest_rate|lag0,linear,interest_rate,1,0,-123.5714,-120.0961,0.503236,0.04636418,0.8651,0.998966,0.0,False,1.3354,0.0,False,0.6030768659673091,42,63.7857
+13,linear|gdp_growth+unemployment_rate|lag1,linear,"gdp_growth, unemployment_rate",2,1,-133.269,-128.1283,0.652339,0.04969236,0.8761,0.998916,4.46,False,1.0899,0.010561,False,0.5999573164766866,41,69.6345
+14,logistic|gdp_growth+unemployment_rate+interest_rate|lag0,logistic,"gdp_growth, unemployment_rate, interest_rate",3,0,-67.4634,-60.5128,0.961437,0.01269192,0.0088,1.0,8.44,True,1.5989,0.196288,True,0.5962610527771279,42,37.7317
+15,linear|gdp_growth+interest_rate|lag1,linear,"gdp_growth, interest_rate",2,1,-130.6462,-125.5055,0.629372,0.04766338,1.4027,0.994209,4.99,False,1.1197,0.041936,False,0.5461914786812989,41,68.3231
+16,linear|interest_rate|lag1,linear,interest_rate,1,1,-109.3379,-105.9107,0.362394,0.04988615,0.6819,0.999571,0.0,False,1.0978,1.9e-05,False,0.5192008882666773,41,56.6689
+17,logistic|interest_rate|lag0,logistic,interest_rate,1,0,22.1763,25.6517,0.659462,0.04056881,0.0497,1.0,0.0,False,1.6765,0.0,False,0.51348208921502,42,-9.0882
+18,logistic|gdp_growth|lag1,logistic,gdp_growth,1,1,16.548,19.9751,0.70647,0.04317613,0.1982,0.999996,0.0,False,1.5651,0.0,False,0.5066102538496047,41,-6.274
+19,logistic|gdp_growth+interest_rate|lag1,logistic,"gdp_growth, interest_rate",2,1,17.3133,22.454,0.707683,0.04373635,0.2692,0.999988,4.99,False,1.6731,0.287896,True,0.4652825780855607,41,-5.6567
+20,linear|unemployment_rate|lag1,linear,unemployment_rate,1,1,-100.8536,-97.4264,0.215808,0.05261606,0.5547,0.999802,0.0,False,1.0004,0.001303,False,0.45888915218546256,41,52.4268
+21,logistic|gdp_growth+unemployment_rate|lag1,logistic,"gdp_growth, unemployment_rate",2,1,16.8015,21.9422,0.711309,0.04529837,0.119,1.0,4.46,False,1.5843,0.206239,True,0.45118055020158865,41,-5.4007
+22,linear|unemployment_rate+interest_rate|lag1,linear,"unemployment_rate, interest_rate",2,1,-108.0527,-102.912,0.356925,0.05124303,0.7969,0.999235,2.64,False,1.0322,0.418727,True,0.44795057348874845,41,57.0263
+23,linear|gdp_growth|lag1,linear,gdp_growth,1,1,-128.1232,-124.696,0.596756,0.04691321,1.7488,0.987769,0.0,False,0.9341,0.0,False,0.4378626525442295,41,66.0616
+24,linear|gdp_growth+unemployment_rate+interest_rate|lag1,linear,"gdp_growth, unemployment_rate, interest_rate",3,1,-142.5489,-135.6946,0.728821,0.05076891,1.8158,0.986146,8.43,True,1.2493,0.001527,False,0.4169112990004891,41,75.2744
+25,logistic|interest_rate|lag1,logistic,interest_rate,1,1,37.6121,41.0393,0.509346,0.04698694,0.0644,1.0,0.0,False,1.4139,0.0,False,0.40548891059872405,41,-16.8061
+26,logistic|unemployment_rate+interest_rate|lag1,logistic,"unemployment_rate, interest_rate",2,1,36.3695,41.5102,0.534726,0.04926836,0.2509,0.999991,2.64,False,1.3582,0.085013,False,0.39563031931189796,41,-15.1847
+27,linear|interest_rate|lag2,linear,interest_rate,1,2,-94.8021,-91.4243,0.162267,0.05659441,0.6312,0.999678,0.0,False,0.7732,0.005785,False,0.3945315749595812,40,49.401
+28,linear|gdp_growth|lag2,linear,gdp_growth,1,2,-94.1618,-90.7841,0.14875,0.05769093,0.3442,0.999968,0.0,False,0.7479,0.008081,False,0.3872978863462455,40,49.0809
+29,logistic|gdp_growth+unemployment_rate+interest_rate|lag1,logistic,"gdp_growth, unemployment_rate, interest_rate",3,1,16.3246,23.1789,0.720888,0.04888763,0.1372,0.999999,8.43,True,1.6948,0.137532,True,0.38629508669195306,41,-4.1623
+30,linear|unemployment_rate|lag2,linear,unemployment_rate,1,2,-92.9356,-89.5578,0.12225,0.06002311,0.8719,0.998935,0.0,False,0.8301,0.015442,False,0.37080074122781154,40,48.4678
+31,linear|unemployment_rate+interest_rate|lag2,linear,"unemployment_rate, interest_rate",2,2,-93.9358,-88.8691,0.163668,0.05696778,0.4344,0.999922,2.62,False,0.7515,0.309075,True,0.3521097280192339,40,49.9679
+32,linear|gdp_growth+unemployment_rate|lag2,linear,"gdp_growth, unemployment_rate",2,2,-92.3607,-87.2941,0.13008,0.05628106,0.4191,0.999932,4.47,False,0.7642,0.670069,True,0.34794555385836884,40,49.1804
+33,linear|gdp_growth+interest_rate|lag2,linear,"gdp_growth, interest_rate",2,2,-93.0221,-87.9555,0.144345,0.05671466,0.8633,0.998973,5.0,False,0.7514,0.654068,True,0.33803780736106376,40,49.5111
+34,logistic|unemployment_rate|lag1,logistic,unemployment_rate,1,1,47.8356,51.2628,0.370396,0.05312375,0.472,0.999893,0.0,False,1.3008,1.5e-05,False,0.32636785422764997,41,-21.9178
+35,linear|gdp_growth+unemployment_rate+interest_rate|lag2,linear,"gdp_growth, unemployment_rate, interest_rate",3,2,-92.4435,-85.6879,0.151278,0.0565857,0.4984,0.999868,8.51,True,0.7818,0.50203,True,0.2985765778694437,40,50.2217
+36,logistic|interest_rate|lag2,logistic,interest_rate,1,2,52.108,55.4857,0.293623,0.05503382,0.5868,0.999756,0.0,False,0.83,0.000181,False,0.23440196419160322,40,-24.054
+37,logistic|gdp_growth|lag2,logistic,gdp_growth,1,2,51.9714,55.3492,0.296031,0.05754284,0.2015,0.999996,0.0,False,0.7524,0.000169,False,0.21893351464457655,40,-23.9857
+38,logistic|unemployment_rate+interest_rate|lag2,logistic,"unemployment_rate, interest_rate",2,2,51.7114,56.778,0.316722,0.05717607,0.2613,0.999989,2.62,False,0.7903,0.139156,True,0.2056300221188333,40,-22.8557
+39,logistic|gdp_growth+unemployment_rate|lag2,logistic,"gdp_growth, unemployment_rate",2,2,53.8001,58.8667,0.280095,0.05667205,0.2622,0.999989,4.47,False,0.7708,0.692509,True,0.19575757815132727,40,-23.9
+40,logistic|gdp_growth+interest_rate|lag2,logistic,"gdp_growth, interest_rate",2,2,52.9991,58.0657,0.294368,0.05587229,1.0043,0.998221,5.0,False,0.7647,0.346184,True,0.18191071279378151,40,-23.4995
+41,logistic|gdp_growth+unemployment_rate+interest_rate|lag2,logistic,"gdp_growth, unemployment_rate, interest_rate",3,2,53.572,60.3275,0.300184,0.05672379,0.2837,0.999985,8.51,True,0.8137,0.725079,True,0.1729983598409718,40,-22.786
+42,logistic|unemployment_rate|lag2,logistic,unemployment_rate,1,2,55.6383,59.0161,0.228445,0.06080921,1.1552,0.997065,0.0,False,0.8869,0.001069,False,0.17184428664692253,40,-25.8192

@@ -1,5 +1,5 @@
 """
-Model Selection Pipeline — Core Component
+Model Selection Pipeline — Enhanced
 
 Systematically evaluates candidate PD forward models across:
 - Variable combinations (single, pairwise, full set)
@@ -7,14 +7,27 @@ Systematically evaluates candidate PD forward models across:
 - Model types (logistic regression, probit, linear)
 
 For each candidate, computes: AIC, BIC, Adjusted R², out-of-sample RMSE,
-and Hosmer-Lemeshow p-value. Outputs a ranked comparison table for
-transparent, auditable model selection — aligned with IFRS 9 governance.
+Hosmer-Lemeshow p-value, VIF, Durbin-Watson statistic, and coefficient p-values.
+
+Enhancements over v1:
+- VIF screening: flags/excludes candidates with VIF > threshold (default 5)
+- Walk-forward cross-validation: expanding window instead of fixed split
+- Durbin-Watson test: autocorrelation in residuals
+- P-value rejection: excludes models where key coefficients are insignificant
+
+Outputs a ranked comparison table for transparent, auditable model selection —
+aligned with IFRS 9 governance requirements.
 """
 
 import itertools
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple
+
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.stats.stattools import durbin_watson
 
 from credit_one.ecl.pd_forward_model import PDForwardModel, MACRO_VARIABLES
 
@@ -35,10 +48,16 @@ class ModelSelectionPipeline:
     variable_sets : list of list of str, optional
         Explicit variable combinations. If None, generates all subsets of MACRO_VARIABLES.
     train_ratio : float
-        Fraction of data for training in train/test split. Default: 0.7.
+        Fraction of data for training (used only for simple split fallback). Default: 0.7.
     ranking_metric : str
-        Primary metric for ranking. One of 'aic', 'bic', 'adj_r2', 'oos_rmse', 'composite'.
-        Default: 'composite'.
+        Primary metric for ranking. Default: 'composite'.
+    vif_threshold : float
+        VIF 阈值: VIF > threshold 的候选模型会被标记。Default: 5.0.
+    pvalue_threshold : float
+        系数 p-value 阈值: 任何系数 p > threshold 的模型会被标记。Default: 0.10.
+    walk_forward_folds : int
+        Walk-forward cross-validation 折数。Default: 5.
+        设为 0 则使用简单 train/test split。
     """
 
     def __init__(
@@ -48,13 +67,18 @@ class ModelSelectionPipeline:
         variable_sets: Optional[List[List[str]]] = None,
         train_ratio: float = 0.7,
         ranking_metric: str = "composite",
+        vif_threshold: float = 5.0,
+        pvalue_threshold: float = 0.10,
+        walk_forward_folds: int = 5,
     ):
         self.model_types = model_types or ["logistic", "linear"]
         self.max_lag = max_lag
         self.train_ratio = train_ratio
         self.ranking_metric = ranking_metric
+        self.vif_threshold = vif_threshold
+        self.pvalue_threshold = pvalue_threshold
+        self.walk_forward_folds = walk_forward_folds
 
-        # Generate all non-empty subsets of MACRO_VARIABLES if not specified
         if variable_sets is None:
             self.variable_sets = self._generate_variable_subsets()
         else:
@@ -95,13 +119,16 @@ class ModelSelectionPipeline:
 
         if verbose:
             print(f"\n{'=' * 70}")
-            print("ECL MODEL SELECTION PIPELINE")
+            print("ECL MODEL SELECTION PIPELINE (Enhanced)")
             print(f"{'=' * 70}")
             print(f"Candidates to evaluate: {total_candidates}")
             print(f"Model types: {self.model_types}")
             print(f"Variable sets: {len(self.variable_sets)}")
             print(f"Lag range: 0 to {self.max_lag}")
-            print(f"Train/Test split: {self.train_ratio:.0%} / {1 - self.train_ratio:.0%}")
+            cv_mode = f"Walk-forward ({self.walk_forward_folds} folds)" if self.walk_forward_folds > 0 else f"Simple split ({self.train_ratio:.0%}/{1 - self.train_ratio:.0%})"
+            print(f"Cross-validation: {cv_mode}")
+            print(f"VIF threshold: {self.vif_threshold}")
+            print(f"P-value threshold: {self.pvalue_threshold}")
             print(f"Ranking metric: {self.ranking_metric}")
             print("-" * 70)
 
@@ -122,7 +149,6 @@ class ModelSelectionPipeline:
             print(f"\nCompleted: {len(self._results)} valid models out of {total_candidates}")
             self._print_top_models()
 
-        # Auto-select best model
         self._select_best_model(macro_df)
 
         return self._results_df
@@ -134,34 +160,48 @@ class ModelSelectionPipeline:
         variables: List[str],
         lag: int,
     ) -> Optional[Dict]:
-        """
-        Evaluate a single candidate model configuration.
-
-        Returns None if the model fails to fit (e.g., insufficient data after lagging).
-        """
+        """Evaluate a single candidate model configuration."""
         try:
             model = PDForwardModel(model_type=model_type, variables=variables, lag=lag)
 
-            # Train/test split (temporal: first N% train, rest test)
             n = len(macro_df)
-            n_effective = n - lag  # usable rows after lagging
+            n_effective = n - lag
             if n_effective < 10:
                 return None
 
+            # Fit on training data (simple split for fit stats)
             split_idx = int(n * self.train_ratio)
             train_df = macro_df.iloc[:split_idx].copy()
             test_df = macro_df.iloc[split_idx:].copy()
 
-            # Fit on training data
             fit_stats = model.fit(train_df)
 
-            # Out-of-sample prediction and RMSE
-            oos_rmse = self._compute_oos_rmse(model, test_df)
+            # Out-of-sample evaluation
+            if self.walk_forward_folds > 0:
+                oos_rmse = self._walk_forward_cv(macro_df, model_type, variables, lag)
+            else:
+                oos_rmse = self._compute_oos_rmse(model, test_df)
 
             # Hosmer-Lemeshow test
             hl_result = model.hosmer_lemeshow_test(macro_df)
 
-            # Build result record
+            # VIF computation (only for multi-variable models)
+            vif_values = self._compute_vif(macro_df, variables, lag)
+            max_vif = max(vif_values.values()) if vif_values else 0.0
+            vif_flag = max_vif > self.vif_threshold
+
+            # Durbin-Watson test for residual autocorrelation
+            dw_stat = self._compute_durbin_watson(model, train_df)
+
+            # P-value screening
+            p_values_detail = fit_stats.get("p_values", {})
+            # 检查非常数项的系数 p-value
+            max_pvalue = 0.0
+            for var_name, pv in p_values_detail.items():
+                if var_name != "const":
+                    max_pvalue = max(max_pvalue, pv)
+            pvalue_flag = max_pvalue > self.pvalue_threshold
+
             result = {
                 "model_type": model_type,
                 "variables": ", ".join(variables),
@@ -170,40 +210,143 @@ class ModelSelectionPipeline:
                 "model_label": f"{model_type}|{'+'.join(variables)}|lag{lag}",
             }
 
-            # Information criteria (lower is better)
             result["aic"] = fit_stats.get("aic", np.nan)
             result["bic"] = fit_stats.get("bic", np.nan)
 
-            # Goodness of fit (higher is better)
             if model_type == "probit":
                 result["adj_r2"] = fit_stats.get("pseudo_r2", np.nan)
             else:
                 result["adj_r2"] = fit_stats.get("adj_r2", np.nan)
 
-            # Out-of-sample performance (lower is better)
             result["oos_rmse"] = oos_rmse
-
-            # Hosmer-Lemeshow (higher p-value = better calibration)
             result["hl_chi2"] = hl_result["chi2_statistic"]
             result["hl_p_value"] = hl_result["p_value"]
 
-            # Coefficient details
+            # 新增指标
+            result["max_vif"] = round(max_vif, 2)
+            result["vif_flag"] = vif_flag
+            result["vif_detail"] = vif_values
+            result["durbin_watson"] = round(dw_stat, 4)
+            result["max_coef_pvalue"] = round(max_pvalue, 6)
+            result["pvalue_flag"] = pvalue_flag
+
             result["coefficients"] = fit_stats.get("coefficients", {})
-            result["p_values_detail"] = fit_stats.get("p_values", {})
+            result["p_values_detail"] = p_values_detail
             result["n_obs"] = fit_stats.get("n_obs", 0)
             result["log_likelihood"] = fit_stats.get("log_likelihood", np.nan)
 
             return result
 
         except Exception:
-            # Skip models that fail to converge or have numerical issues
             return None
+
+    def _compute_vif(
+        self, macro_df: pd.DataFrame, variables: List[str], lag: int
+    ) -> Dict[str, float]:
+        """
+        计算各自变量的 Variance Inflation Factor。
+
+        VIF > 5 表示多重共线性问题，VIF > 10 严重共线性。
+        单变量模型返回空 dict。
+        """
+        if len(variables) < 2:
+            return {}
+
+        df = macro_df.copy()
+        if lag > 0:
+            for var in variables:
+                df[var] = df[var].shift(lag)
+            df = df.dropna()
+
+        X = df[variables].values
+        if len(X) < len(variables) + 1:
+            return {}
+
+        # 加常数项计算 VIF
+        X_with_const = sm.add_constant(X)
+        vif_dict = {}
+        for i, var in enumerate(variables):
+            try:
+                vif_val = variance_inflation_factor(X_with_const, i + 1)  # +1 跳过常数项
+                vif_dict[var] = round(float(vif_val), 2)
+            except Exception:
+                vif_dict[var] = np.nan
+
+        return vif_dict
+
+    def _compute_durbin_watson(self, model: PDForwardModel, train_df: pd.DataFrame) -> float:
+        """
+        计算 Durbin-Watson 统计量，检测残差自相关。
+
+        DW ≈ 2: 无自相关
+        DW < 1.5: 正自相关
+        DW > 2.5: 负自相关
+        """
+        try:
+            if not model.is_fitted:
+                return np.nan
+            residuals = model._fitted_model.resid
+            return float(durbin_watson(residuals))
+        except Exception:
+            return np.nan
+
+    def _walk_forward_cv(
+        self,
+        macro_df: pd.DataFrame,
+        model_type: str,
+        variables: List[str],
+        lag: int,
+    ) -> float:
+        """
+        Walk-forward (expanding window) cross-validation。
+
+        每个 fold:
+        - 训练集: 从开头扩展到 split point
+        - 测试集: split point 后的固定窗口
+
+        比简单 train/test split 更适合时间序列。
+
+        Returns
+        -------
+        float
+            各折 RMSE 的均值。
+        """
+        n = len(macro_df)
+        min_train = max(int(n * 0.4), lag + 10)  # 至少 40% 数据做初始训练
+        test_size = max((n - min_train) // self.walk_forward_folds, 3)
+
+        rmse_list = []
+        for fold in range(self.walk_forward_folds):
+            train_end = min_train + fold * test_size
+            test_end = min(train_end + test_size, n)
+
+            if train_end >= n or test_end <= train_end:
+                break
+
+            train_df = macro_df.iloc[:train_end].copy()
+            test_df = macro_df.iloc[train_end:test_end].copy()
+
+            if len(test_df) < 2:
+                continue
+
+            try:
+                fold_model = PDForwardModel(
+                    model_type=model_type, variables=variables, lag=lag
+                )
+                fold_model.fit(train_df)
+                rmse = self._compute_oos_rmse(fold_model, test_df)
+                if not np.isnan(rmse):
+                    rmse_list.append(rmse)
+            except Exception:
+                continue
+
+        if not rmse_list:
+            return np.nan
+        return round(float(np.mean(rmse_list)), 8)
 
     def _compute_oos_rmse(self, model: PDForwardModel, test_df: pd.DataFrame) -> float:
         """Compute out-of-sample RMSE on test data."""
         try:
-            import statsmodels.api as sm
-
             df = test_df.copy()
             if model.lag > 0:
                 for var in model.variables:
@@ -233,14 +376,13 @@ class ModelSelectionPipeline:
             return np.nan
 
     def _build_comparison_table(self) -> pd.DataFrame:
-        """Build and rank the comparison table."""
+        """Build and rank the comparison table with enhanced scoring."""
         df = pd.DataFrame(self._results)
         if df.empty:
             return df
 
-        # Compute composite score (normalize each metric to [0, 1], then average)
-        # Lower is better for: AIC, BIC, OOS_RMSE
-        # Higher is better for: adj_R2, HL p-value
+        # Composite score: normalize each metric to [0, 1], then weighted average
+        # Penalty for VIF flag and p-value flag
         score_cols = ["aic", "bic", "adj_r2", "oos_rmse", "hl_p_value"]
         for col in score_cols:
             if col not in df.columns:
@@ -256,17 +398,30 @@ class ModelSelectionPipeline:
             if rng == 0:
                 df[f"{col}_norm"] = 0.5
             elif col in ("adj_r2", "hl_p_value"):
-                # Higher is better → normalize directly
                 df[f"{col}_norm"] = (df[col] - col_min) / rng
             else:
-                # Lower is better → invert
                 df[f"{col}_norm"] = 1 - (df[col] - col_min) / rng
+
+        # Durbin-Watson: 越接近 2 越好 → 归一化为 |DW - 2| 的反向
+        if "durbin_watson" in df.columns:
+            dw_deviation = (df["durbin_watson"] - 2.0).abs()
+            dw_max = dw_deviation.max()
+            if dw_max > 0:
+                df["dw_norm"] = 1 - dw_deviation / dw_max
+            else:
+                df["dw_norm"] = 0.5
 
         norm_cols = [c for c in df.columns if c.endswith("_norm")]
         if norm_cols:
             df["composite_score"] = df[norm_cols].mean(axis=1)
         else:
             df["composite_score"] = 0.0
+
+        # 对 VIF 和 p-value 标记施加惩罚
+        if "vif_flag" in df.columns:
+            df.loc[df["vif_flag"] == True, "composite_score"] *= 0.85  # noqa: E712
+        if "pvalue_flag" in df.columns:
+            df.loc[df["pvalue_flag"] == True, "composite_score"] *= 0.90  # noqa: E712
 
         # Sort by ranking metric
         if self.ranking_metric == "composite":
@@ -291,7 +446,8 @@ class ModelSelectionPipeline:
 
         display_cols = [
             "rank", "model_label", "aic", "bic", "adj_r2",
-            "oos_rmse", "hl_p_value", "composite_score",
+            "oos_rmse", "hl_p_value", "max_vif", "durbin_watson",
+            "max_coef_pvalue", "composite_score",
         ]
         available = [c for c in display_cols if c in self._results_df.columns]
         top = self._results_df.head(top_n)[available]
@@ -300,6 +456,15 @@ class ModelSelectionPipeline:
         print(f"TOP {min(top_n, len(top))} MODELS")
         print("=" * 70)
         print(top.to_string(index=False, float_format=lambda x: f"{x:.6f}"))
+
+        # VIF / p-value 警告
+        flagged_vif = self._results_df.head(top_n)["vif_flag"].sum()
+        flagged_pv = self._results_df.head(top_n)["pvalue_flag"].sum()
+        if flagged_vif > 0:
+            print(f"⚠ {flagged_vif} of top {top_n} models flagged for VIF > {self.vif_threshold}")
+        if flagged_pv > 0:
+            print(f"⚠ {flagged_pv} of top {top_n} models have insignificant coefficients (p > {self.pvalue_threshold})")
+
         print("=" * 70)
 
     def _select_best_model(self, macro_df: pd.DataFrame) -> None:
@@ -331,21 +496,14 @@ class ModelSelectionPipeline:
         return self._results_df
 
     def export_results(self, filepath: str) -> None:
-        """
-        Export the comparison table to CSV.
-
-        Parameters
-        ----------
-        filepath : str
-            Output CSV path.
-        """
+        """Export the comparison table to CSV."""
         if self._results_df is None:
             raise RuntimeError("Pipeline not run yet. Call run() first.")
 
-        # Drop internal columns before export
         export_cols = [
             "rank", "model_label", "model_type", "variables", "n_variables", "lag",
             "aic", "bic", "adj_r2", "oos_rmse", "hl_chi2", "hl_p_value",
+            "max_vif", "vif_flag", "durbin_watson", "max_coef_pvalue", "pvalue_flag",
             "composite_score", "n_obs", "log_likelihood",
         ]
         available = [c for c in export_cols if c in self._results_df.columns]
@@ -353,19 +511,7 @@ class ModelSelectionPipeline:
         print(f"Model selection results exported to {filepath}")
 
     def get_model_details(self, rank: int = 1) -> Dict:
-        """
-        Get detailed information about a specific ranked model.
-
-        Parameters
-        ----------
-        rank : int
-            Rank of the model (1 = best).
-
-        Returns
-        -------
-        dict
-            Full model details including coefficients and p-values.
-        """
+        """Get detailed information about a specific ranked model."""
         if self._results_df is None:
             raise RuntimeError("Pipeline not run yet. Call run() first.")
 

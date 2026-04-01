@@ -22,6 +22,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+fred = [
+    "fredapi>=0.5.0",
+]
 dev = [
     "pytest-cov",
     "black",

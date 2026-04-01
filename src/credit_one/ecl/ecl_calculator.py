@@ -211,32 +211,34 @@ class ECLCalculator:
             ECL under each weight configuration.
         """
         if weight_shifts is None:
-            weight_shifts = [
-                {"base": 0.50, "downside": 0.30, "upside": 0.20},  # Standard
-                {"base": 0.40, "downside": 0.40, "upside": 0.20},  # Pessimistic
-                {"base": 0.60, "downside": 0.20, "upside": 0.20},  # Neutral
-                {"base": 0.33, "downside": 0.34, "upside": 0.33},  # Equal
-                {"base": 0.30, "downside": 0.50, "upside": 0.20},  # Stressed
-            ]
+            # 根据实际场景名称动态生成默认权重配置
+            scenario_names = list(scenario_pds.keys())
+            n_scenarios = len(scenario_names)
+            equal_w = round(1.0 / n_scenarios, 4)
+            # 至少提供一个等权配置
+            weight_shifts = [{name: equal_w for name in scenario_names}]
+            # 修正末位使总和为 1
+            weight_shifts[0][scenario_names[-1]] = round(
+                1.0 - equal_w * (n_scenarios - 1), 4
+            )
 
         rows = []
         for i, weights in enumerate(weight_shifts):
-            # Temporarily update weights
             original_weights = dict(scenario_engine.scenario_weights)
             scenario_engine.update_weights(weights)
 
             ecl_result = self.compute_ecl(scenario_pds, scenario_engine)
 
-            rows.append({
+            row = {
                 "config": f"Config {i + 1}",
-                "base_weight": weights.get("base", 0),
-                "downside_weight": weights.get("downside", 0),
-                "upside_weight": weights.get("upside", 0),
                 "ecl_12m": ecl_result["ecl_12m"],
                 "ecl_lifetime": ecl_result["ecl_lifetime"],
-            })
+            }
+            # 动态添加每个场景的权重列
+            for name in weights:
+                row[f"{name}_weight"] = weights[name]
+            rows.append(row)
 
-            # Restore original weights
             scenario_engine.update_weights(original_weights)
 
         return pd.DataFrame(rows)
