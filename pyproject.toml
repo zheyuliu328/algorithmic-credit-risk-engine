@@ -16,7 +16,7 @@ dependencies = [
     "xgboost>=2.0",
     "shap>=0.42",
     "flask>=2.3",
-    "plotly>=5.15",
+    "plotly>=6.7.0",
     "pytest>=7.4",
     "statsmodels>=0.13.0",
 ]
