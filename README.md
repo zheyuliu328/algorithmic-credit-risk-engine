@@ -1,258 +1,81 @@
-# 🏦 CreditOne V6.0 - AI-Powered Credit Risk Assessment System
+# Algorithmic Credit Risk Engine
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/streamlit-1.28+-red.svg)](https://streamlit.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
+Educational credit-scoring prototypes, model-metric utilities, and data-processing examples. The repository is a portfolio demonstration; it is not a deployed, independently validated, or regulatory-compliant credit decision system.
 
-> An enterprise-grade credit risk assessment platform with real-time monitoring, dual model architecture, and FICO-style credit scoring.
+For a separate validation experiment built from fully synthetic time-series data, see [model-risk-lab](https://github.com/zheyuliu328/model-risk-lab). The existing modules here are not evidence of that project's validation results.
 
----
+## What is implemented
 
-## 🌟 **Key Features**
+| Component | Scope |
+| --- | --- |
+| [Offline classification experiment](src/credit_one/synthetic_demo.py) | Fresh independent normal features, logistic latent probabilities, sampled binary labels, train-only scaling and a fitted logistic-regression baseline. Reports recomputable held-out AUC, KS and Brier loss. |
+| [SME scoring prototype](src/credit_one/sme_credit_explainability.py) | Synthetic-data generation, a boosting classifier, optional WoE/logistic scorecard, score scaling, and SHAP integration. These are experimental components, not calibrated production PDs. |
+| [Metric utilities](src/credit_one/model_validation.py) | Functions for AUC, K-S, PSI, CAP/Gini and calibration summaries from supplied labels and predictions. The standalone example fabricates predictions from labels; it does not validate a trained model. |
+| [CSV demonstration](scripts/run_real.py) | Input-column checks and a simple debt-to-income scoring formula. It does not load or train an XGBoost model. |
+| [Streamlit interface](src/credit_one/app.py) | Experimental scoring and drift-monitoring interface. The interface and its optional dependencies were not included in the offline smoke test. |
+| [Macro/ECL experiments](src/credit_one/ecl/) | Separate research modules. Their bundled values are approximate demonstrations, and the complete pipeline has not been independently validated. |
 
-### **1. Dual Model Architecture**
-- **Agile Mode (XGBoost)**: Fast decision-making with SHAP explainability
-- **Compliant Mode (Scorecard)**: Regulatory-compliant with transparent scoring
+## Offline examples
 
-### **2. FICO-Style Credit Scoring**
-- 300-850 credit score range using PDO (Points to Double the Odds) formula
-- Configurable parameters: Base Score = 600, Base Odds = 50:1, PDO = 20
-- Real-time PD (Probability of Default) calculation
+Run from the repository root with Python 3.9+ and NumPy, scikit-learn and pandas already installed. Neither command below calls a remote data service. Dependency installation is a separate setup step.
 
-### **3. Production-Grade Monitoring**
-- **PSI (Population Stability Index)** for data drift detection
-- Three monitoring modes:
-  - 📁 Upload production data (CSV)
-  - 🎲 Simulate drift (demo)
-  - 🔄 Reset to baseline
-- Color-coded alerts: 🟢 Stable | 🟡 Warning | 🔴 Critical
-
-### **4. Business Intelligence**
-- Real-time market data integration (Yahoo Finance API)
-- Blue-Chip adjustment for large-cap companies
-- Stress testing scenarios (revenue shock, volatility multiplier)
-
-### **5. Interactive Web Interface**
-- Built with Streamlit for instant deployment
-- Real-time SHAP value visualization
-- Downloadable credit reports
-
----
-
-## 🚀 **Quick Start**
-
-### **Prerequisites**
 ```bash
-Python 3.9+
-pip (Python package manager)
+# Fit once on synthetic training rows; evaluate a separate 25% holdout.
+python src/credit_one/run.py demo --seed 42 --samples 1000 --output artifacts/demo_report.json
+
+# Requires pandas: checks the bundled three-row CSV and applies a DTI formula.
+python scripts/run_real.py data/sample_input.csv --output artifacts/csv_demo
 ```
 
-### **Installation**
+The first report records the seed, generation rule, train/test indices, fitted scaling parameters, software versions and held-out labels/probabilities. Its AUC, two-sided KS separation and Brier loss are calculated from those predictions. A constant training-event-rate predictor is included for comparison; no seed or parameter search is performed.
 
-1. **Clone the repository**
+The features and event probabilities have no credit-business calibration. The random holdout evaluates IID simulated rows, not future economic periods. The second command is separate: it applies the unchanged DTI heuristic and identifies it as `heuristic_dti_formula_v1`, not XGBoost.
+
+For the optional interface, the source-file location is:
+
 ```bash
-git clone https://github.com/yourusername/algorithmic-credit-risk-engine.git
-cd algorithmic-credit-risk-engine
+python src/credit_one/run.py dashboard --port 8501
 ```
 
-2. **Install dependencies**
+The launcher invokes the actual `src/credit_one/app.py` with the current Python interpreter and propagates its process exit status. Install optional interface dependencies from `requirements.txt` separately. Market-data actions may access Yahoo Finance. The UI itself was not smoke-tested.
+
+## Verification status
+
+On 2026-09-07, the synthetic experiment and CSV example ran with isolated output paths. Sixteen targeted tests passed, covering recomputable metrics, seed reproducibility, train-only preprocessing, CLI behavior and fresh CSV artifacts. This is a measured synthetic experiment, not evidence of real credit-model performance.
+
+The [Synthetic CLI checks](https://github.com/zheyuliu328/algorithmic-credit-risk-engine/actions/workflows/synthetic-demo.yml) workflow runs this targeted suite and publishes a fresh report. It is separate from the legacy full-project workflow.
+
+`validate` remains unimplemented and now exits nonzero without producing a report, including with `--dry-run`. Legacy scorecard tests still fail during import, and their generator arguments need alignment. The old standalone metric example also has a NumPy compatibility failure. See [Portfolio status](docs/PORTFOLIO_STATUS.md) for the remaining gaps.
+
 ```bash
-pip install -r requirements.txt
+python -m pytest -p no:cacheprovider tests/test_cli_demo.py tests/test_e2e.py tests/test_basic.py
 ```
 
-3. **Run the application**
-```bash
-streamlit run app.py
-```
+Fixed AUC, accuracy, training-time and inference-time tables from older documentation should not be read as measured results. Historical passing badges and legacy examples are not a substitute for a reproducible test run.
 
-4. **Open your browser**
-```
-http://localhost:8501
-```
+## Data and methodology boundaries
 
----
+- The new offline experiment uses a separate generator with no special-case IDs or prediction overrides. The older SME generator still contains demonstration adjustments; its returned predictions are not an untouched evaluation output.
+- `data/sample_input.csv` is a tiny bundled example without outcome labels. It cannot support an AUC or model-validation conclusion.
+- The legacy Lending Club loader refers to a public Kaggle dataset through a machine-specific cache path. That path is not portable; external data retrieval and licensing were not verified in this audit.
+- The macro-data generator describes its table as approximate values based on historical FRED patterns. Do not describe that bundle as a verified FRED download. Its credit-card delinquency proxy is not a measured borrower default-rate series.
+- Optional public-data integrations require their own source, version, retrieval and usage documentation. The repository's code license does not establish rights to redistribute third-party data.
 
-## 📊 **Usage Examples**
+No production, regulatory-compliance, credit-approval or investment-performance claim follows from these examples. [Project limitations](docs/limitations.md) and [legal scope](docs/legal.md) remain applicable.
 
-### **Example 1: Quick Risk Assessment**
+## Next acceptance milestones
 
-```python
-from sme_credit_explainability import train_scorecard_model, generate_synthetic_sme_data
-import pandas as pd
+1. Implement a genuine supplied-model validation workflow before enabling `validate`.
+2. Repair legacy imports/generator signatures and align optional dependencies; pass the complete test suite in a clean environment.
+3. Keep the legacy metric illustrations and adjusted predictions distinct from fitted-model evaluation.
+4. Establish external-data provenance and suitable validation before publishing any real-data performance claim.
 
-# Generate sample data
-df = generate_synthetic_sme_data(n_samples=1000)
+## Navigation
 
-# Train scorecard model
-scorecard, test_df = train_scorecard_model(df)
+- [Portfolio status and audit evidence](docs/PORTFOLIO_STATUS.md)
+- [Source modules](src/credit_one/)
+- [CSV input format](docs/real-data.md)
+- [Limitations](docs/limitations.md)
+- [MIT code license](LICENSE)
 
-# Predict credit score
-company_data = pd.DataFrame([{
-    'revenue_growth': 0.10,
-    'debt_to_asset_ratio': 0.40,
-    'cash_flow_volatility': 1.0,
-    'industry': 'Tech',
-    'past_default': 0
-}])
-
-credit_score = scorecard.predict_score(company_data)
-print(f"Credit Score: {credit_score[0]:.0f}")  # Output: ~650
-```
-
-### **Example 2: Monitor Data Drift**
-
-```python
-from sme_credit_explainability import calculate_psi, monitor_model_stability
-
-# Calculate PSI for a single feature
-psi_value, details = calculate_psi(
-    expected=train_data['revenue_growth'].values,
-    actual=production_data['revenue_growth'].values
-)
-
-print(f"PSI: {psi_value:.4f}")
-if psi_value >= 0.25:
-    print("⚠️ Significant drift detected! Retraining required.")
-```
-
-### **Example 3: Live Prediction with Market Data**
-
-```python
-from sme_credit_explainability import predict_from_live_data
-
-# Analyze a public company using real market data
-result, shap_vals = predict_from_live_data("9988.HK", clf, explainer)
-
-if result['success']:
-    print(f"Company: {result['company_name']}")
-    print(f"PD: {result['pd_prob']:.2%}")
-    print(f"Metrics: {result['metrics']}")
-```
-
----
-
-## 🏗️ **Architecture**
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   Streamlit Web UI                      │
-├─────────────────────────────────────────────────────────┤
-│  Control Panel  │  Analysis  │  Monitoring  │  Report  │
-└─────────────────────────────────────────────────────────┘
-                            │
-        ┌───────────────────┴───────────────────┐
-        │                                       │
-┌───────▼────────┐                    ┌────────▼────────┐
-│  XGBoost Model │                    │ Scorecard Model │
-│   (Agile Mode) │                    │(Compliant Mode) │
-└───────┬────────┘                    └────────┬────────┘
-        │                                       │
-        └───────────────────┬───────────────────┘
-                            │
-                ┌───────────▼───────────┐
-                │   PSI Monitoring      │
-                │   SHAP Explainability │
-                │   Market Data API     │
-                └───────────────────────┘
-```
-
----
-
-## 🧪 **Testing**
-
-### **Run Unit Tests**
-```bash
-# Install pytest
-pip install pytest pytest-cov
-
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage report
-pytest tests/ --cov=. --cov-report=term-missing
-
-# Generate HTML coverage report
-pytest tests/ --cov=. --cov-report=html
-```
-
-### **Test Coverage**
-- PSI calculation (identical, shifted, moderate distributions)
-- Credit scoring logic (debt impact, score range, default impact)
-- Model monitoring (output format, stability detection)
-- Live prediction with market data integration
-
----
-
-## 📈 **Performance Metrics**
-
-| Metric | XGBoost | Scorecard |
-|--------|---------|-----------|
-| **AUC** | 0.87 | 0.82 |
-| **Accuracy** | 84% | 79% |
-| **Training Time** | 2.3s | 5.1s |
-| **Inference Time** | 12ms | 8ms |
-| **Explainability** | SHAP | Native |
-
----
-
-## 🎯 **Roadmap**
-
-### **V6.0 (Current)** ✅
-- [x] FICO-style credit scoring
-- [x] PSI monitoring dashboard
-- [x] Unit tests and CI/CD
-- [x] File upload for production data
-- [x] Dual model architecture
-
-### **V6.1 (Planned)**
-- [ ] LLM integration for AI-powered explanations
-- [ ] RESTful API endpoints
-- [ ] Docker containerization
-- [ ] Database integration (PostgreSQL)
-
-### **V7.0 (Future)**
-- [ ] Reject inference module
-- [ ] Model versioning with MLflow
-- [ ] Multi-language support
-- [ ] Advanced stress testing scenarios
-
----
-
-## 🤝 **Contributing**
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📄 **License**
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 **Acknowledgments**
-
-- **optbinning**: Optimal binning for scorecard development
-- **SHAP**: Model explainability framework
-- **Streamlit**: Rapid web app development
-- **scikit-learn**: Machine learning toolkit
-- **XGBoost**: Gradient boosting framework
-
----
-
-## 📧 **Contact**
-
-**Author**: Zheyu Liu  
-**GitHub**: [@zheyuliu](https://github.com/zheyuliu)  
-**Project Link**: [https://github.com/zheyuliu/algorithmic-credit-risk-engine](https://github.com/zheyuliu/algorithmic-credit-risk-engine)
-
----
-
-**Made with ❤️ for the FinTech community**
+Start with this page and the status record. Other architecture and quickstart documents contain historical examples and may use old paths or aspirational descriptions.

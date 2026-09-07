@@ -83,7 +83,7 @@ def run_scoring(csv_path: str, output_dir: str = "artifacts") -> dict:
         "timestamp": datetime.now().isoformat(),
         "input_file": csv_path,
         "rows_processed": len(df),
-        "parameters": {"model": "xgboost_v1"},
+        "parameters": {"model": "heuristic_dti_formula_v1"},
         "summary": {
             "grade_distribution": df["risk_grade"].value_counts().to_dict(),
             "avg_pd": df["pd_score"].mean(),

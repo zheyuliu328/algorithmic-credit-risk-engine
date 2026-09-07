@@ -1,0 +1,31 @@
+name: Synthetic CLI checks
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+permissions:
+  contents: read
+jobs:
+  synthetic-cli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install only the offline experiment dependencies
+        run: python -m pip install 'numpy==2.4.2' 'pandas==3.0.1' 'scikit-learn==1.8.0' 'pytest>=8,<10'
+      - name: Verify synthetic CLI and honest failure paths
+        run: python -m pytest tests/test_cli_demo.py tests/test_e2e.py tests/test_basic.py -q
+      - name: Produce a fresh synthetic evaluation
+        run: python src/credit_one/run.py demo --seed 20260907 --output artifacts/ci-synthetic-report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-demo-python-${{ matrix.python }}
+          path: artifacts/ci-synthetic-report.json
+          if-no-files-found: error

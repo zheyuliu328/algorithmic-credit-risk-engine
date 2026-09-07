@@ -1,134 +1,81 @@
 #!/usr/bin/env python3
-"""
-Credit Risk Engine - Unified CLI Entry Point
-"""
+"""CLI entry points for educational credit-risk demonstrations."""
 
 import argparse
+import json
+import subprocess
 import sys
 from pathlib import Path
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Credit Risk Engine - Production-grade PD prediction system",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s demo                    # Run demo with synthetic data
-  %(prog)s validate               # Run model validation
-  %(prog)s dashboard              # Launch Streamlit dashboard
-  %(prog)s validate --dry-run     # Validate without side effects
-        """,
-    )
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command")
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    demo = subparsers.add_parser("demo", help="Run an offline synthetic classification experiment")
+    demo.add_argument("--seed", type=int, default=42, help="Simulation and split seed (default: 42)")
+    demo.add_argument("--samples", type=int, default=1000, help="Synthetic sample count (minimum: 100)")
+    demo.add_argument("--output", "-o", default="artifacts/demo_report.json")
 
-    # Demo command
-    demo_parser = subparsers.add_parser("demo", help="Run demo with synthetic data")
-    demo_parser.add_argument(
-        "--output", "-o", default="artifacts/demo_report.json", help="Output file path"
-    )
+    validate = subparsers.add_parser("validate", help="Reserved; not implemented (exits nonzero)")
+    validate.add_argument("--dry-run", action="store_true", help="Report unimplemented status only")
+    validate.add_argument("--output", "-o", default="artifacts/validation_report.json")
 
-    # Validate command
-    validate_parser = subparsers.add_parser("validate", help="Run model validation")
-    validate_parser.add_argument(
-        "--dry-run", action="store_true", help="Validate without creating files"
-    )
-    validate_parser.add_argument(
-        "--output", "-o", default="artifacts/validation_report.json", help="Output file path"
-    )
+    dashboard = subparsers.add_parser("dashboard", help="Launch the optional Streamlit interface")
+    dashboard.add_argument("--port", "-p", type=int, default=8501)
 
-    # Dashboard command
-    dashboard_parser = subparsers.add_parser("dashboard", help="Launch Streamlit dashboard")
-    dashboard_parser.add_argument("--port", "-p", type=int, default=8501, help="Port to run on")
-
-    args = parser.parse_args()
-
-    if not args.command:
+    args = parser.parse_args(argv)
+    if args.command is None:
         parser.print_help()
-        sys.exit(1)
-
-    # Execute command
-    if args.command == "demo":
-        run_demo(args)
-    elif args.command == "validate":
-        run_validate(args)
-    elif args.command == "dashboard":
-        run_dashboard(args)
+        return 2
+    try:
+        if args.command == "demo":
+            run_demo(args)
+            return 0
+        if args.command == "validate":
+            return run_validate(args)
+        return run_dashboard(args)
+    except (ImportError, OSError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 def run_demo(args):
-    """Run demo with synthetic data"""
-    print("🚀 Credit Risk Engine - Demo Mode")
-    print("=" * 50)
-
-    import json
-    from pathlib import Path
-
-    # Create output directory
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Generate demo report
-    report = {
-        "mode": "DEMO",
-        "timestamp": "2024-01-01T00:00:00",
-        "model": "XGBoost_PD_Model",
-        "metrics": {"auc": 0.87, "ks": 0.52, "gini": 0.74},
-        "note": "Demo with synthetic data. Use real data for production.",
-    }
-
-    if not args.output.endswith("dry_run"):
-        with open(output_path, "w") as f:
-            json.dump(report, f, indent=2)
-        print(f"✓ Report saved to: {output_path}")
+    """Fit on synthetic training rows and save recomputable held-out results."""
+    if __package__:
+        from .synthetic_demo import run_experiment
     else:
-        print("✓ Dry run complete (no files created)")
+        from synthetic_demo import run_experiment
 
-    print("=" * 50)
-    print("✅ Demo complete!")
-
+    report = run_experiment(seed=args.seed, n_samples=args.samples)
+    serialized = json.dumps(report, indent=2, allow_nan=False) + "\n"
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(serialized, encoding="utf-8")
+    metrics = report["metrics"]
+    print(f"Synthetic classification demo: seed={args.seed}, samples={args.samples}")
+    print(f"Held-out AUC={metrics['auc']:.6f}, KS={metrics['ks']:.6f}, Brier={metrics['brier']:.6f}")
+    print(f"Report saved: {output}")
+    print("Educational simulation; these are not calibrated credit-risk estimates.")
     return report
 
 
 def run_validate(args):
-    """Run model validation"""
-    print("🔬 Credit Risk Engine - Model Validation")
-    print("=" * 50)
-
-    if args.dry_run:
-        print("🧪 DRY RUN MODE - No files will be created")
-        print("=" * 50)
-
-    # Import and run validation
-    try:
-        import model_validation as mv
-
-        if args.dry_run:
-            print("✓ Validation module loaded successfully")
-            print("✓ Would run: OOT validation, K-S test, CAP curve, Calibration")
-            print("✓ Dry run complete - no side effects")
-        else:
-            # Run actual validation
-            print("Running validation suite...")
-            # mv.run_full_validation(...)  # Actual validation
-            print("✓ Validation complete")
-
-    except ImportError as e:
-        print(f"⚠️  Could not load validation module: {e}")
-        print("✓ Validation structure verified (dry run)")
-
-    print("=" * 50)
-    print("✅ Validation complete!")
+    """Fail explicitly until a real validation orchestration path exists."""
+    detail = " Dry run does not validate a model." if args.dry_run else ""
+    print(
+        f"NOT IMPLEMENTED: validate has no model-validation workflow.{detail} No report written.",
+        file=sys.stderr,
+    )
+    return 2
 
 
 def run_dashboard(args):
-    """Launch Streamlit dashboard"""
-    print("📊 Launching dashboard...")
-    import subprocess
-
-    subprocess.run(["streamlit", "run", "app.py", "--server.port", str(args.port)])
+    """Use the current interpreter and propagate the Streamlit process status."""
+    app = Path(__file__).resolve().with_name("app.py")
+    command = [sys.executable, "-m", "streamlit", "run", str(app), "--server.port", str(args.port)]
+    return subprocess.run(command, check=False).returncode
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

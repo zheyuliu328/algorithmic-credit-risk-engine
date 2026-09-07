@@ -1,29 +1,33 @@
-"""E2E tests for run-real path"""
+"""Exercise the CSV heuristic with artifacts created only by the current run."""
 
-import subprocess
+import csv
 import json
-import os
-import glob
+import math
+import subprocess
+import sys
+from pathlib import Path
 
 
-def test_run_real():
-    """Test run-real path"""
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_run_real(tmp_path):
+    output = tmp_path / "scoring"
     result = subprocess.run(
-        ["python", "scripts/run_real.py", "data/sample_input.csv", "--output", "artifacts"],
-        capture_output=True,
-        text=True,
+        [sys.executable, str(ROOT / "scripts/run_real.py"), str(ROOT / "data/sample_input.csv"),
+         "--output", str(output)],
+        cwd=tmp_path, capture_output=True, text=True, check=False,
     )
-    assert result.returncode == 0, f"run-real failed: {result.stderr}"
-
-    # Check output files exist
-    report_files = glob.glob("artifacts/scoring_report_*.json")
-    assert len(report_files) > 0, "No report file generated"
-
-    # Validate JSON structure
-    with open(report_files[0]) as f:
-        report = json.load(f)
-
-    assert "run_id" in report
-    assert "version" in report
-    assert "timestamp" in report
-    assert "rows_processed" in report
+    assert result.returncode == 0, result.stderr
+    reports = list(output.glob("scoring_report_*.json"))
+    assert len(reports) == 1
+    report = json.loads(reports[0].read_text())
+    assert report["rows_processed"] == 3
+    assert report["parameters"]["model"] == "heuristic_dti_formula_v1"
+    assert reports[0].name == f"scoring_report_{report['run_id']}.json"
+    csv_path = output / f"scoring_output_{report['run_id']}.csv"
+    with csv_path.open(newline="") as source:
+        rows = list(csv.DictReader(source))
+    assert len(rows) == 3
+    assert math.isclose(float(rows[0]["pd_score"]), 0.1456)
+    assert rows[0]["risk_grade"] == "B"

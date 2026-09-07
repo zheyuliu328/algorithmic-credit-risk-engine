@@ -1,24 +1,22 @@
-"""Minimal tests for credit-one"""
+"""Basic CLI availability without optional UI/model dependencies."""
 
-import unittest
 import sys
-import os
+from pathlib import Path
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
-
-class TestBasic(unittest.TestCase):
-    def test_import(self):
-        """Test basic import works"""
-        from credit_one import run
-
-        self.assertTrue(hasattr(run, "main") or True)
-
-    def test_artifacts_dir(self):
-        """Test artifacts directory exists"""
-        artifacts_dir = os.path.join(os.path.dirname(__file__), "..", "artifacts")
-        self.assertTrue(os.path.exists(artifacts_dir))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_cli_entry_is_callable():
+    from credit_one import run
+
+    assert callable(run.main)
+
+
+def test_help_lists_available_commands(capsys):
+    from credit_one import run
+
+    assert run.main([]) == 2
+    output = capsys.readouterr().out
+    assert "demo" in output
+    assert "validate" in output
+    assert "dashboard" in output
