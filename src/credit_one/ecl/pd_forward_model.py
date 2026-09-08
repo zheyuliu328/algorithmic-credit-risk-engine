@@ -12,14 +12,15 @@ The fitted model converts a base PD estimate into a conditional PD given
 a specific macro-economic scenario.
 """
 
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
 from scipy import stats as scipy_stats
-from typing import Dict, List, Optional, Tuple
 
 try:
     import statsmodels.api as sm
-    from statsmodels.discrete.discrete_model import Logit, Probit
+    from statsmodels.discrete.discrete_model import Probit
 
     HAS_STATSMODELS = True
 except ImportError:
@@ -54,7 +55,9 @@ class PDForwardModel:
             raise ImportError("statsmodels is required for PDForwardModel. pip install statsmodels")
 
         if model_type not in ("logistic", "probit", "linear"):
-            raise ValueError(f"model_type must be 'logistic', 'probit', or 'linear', got {model_type}")
+            raise ValueError(
+                f"model_type must be 'logistic', 'probit', or 'linear', got {model_type}"
+            )
 
         self.model_type = model_type
         self.variables = variables or list(MACRO_VARIABLES)
@@ -128,7 +131,6 @@ class PDForwardModel:
         """Extract model fit statistics for comparison."""
         result = self._fitted_model
         n = len(y)
-        k = len(self.variables) + 1  # +1 for constant
 
         stats: Dict = {
             "model_type": self.model_type,

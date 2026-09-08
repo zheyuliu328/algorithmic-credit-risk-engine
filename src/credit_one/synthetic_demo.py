@@ -14,7 +14,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
 COEFFICIENTS = (0.8, -0.6, 0.4, 0.0)
 INTERCEPT = -1.0
 
@@ -23,7 +22,11 @@ def generate_dataset(seed=42, n_samples=1000):
     """Return independent synthetic features and stochastic binary event labels."""
     if not isinstance(seed, (int, np.integer)) or isinstance(seed, bool) or not 0 <= seed < 2**32:
         raise ValueError("seed must be an integer between 0 and 2**32 - 1")
-    if not isinstance(n_samples, (int, np.integer)) or isinstance(n_samples, bool) or n_samples < 100:
+    if (
+        not isinstance(n_samples, (int, np.integer))
+        or isinstance(n_samples, bool)
+        or n_samples < 100
+    ):
         raise ValueError("n_samples must be an integer of at least 100")
     rng = np.random.default_rng(seed)
     features = rng.normal(size=(n_samples, len(COEFFICIENTS)))
@@ -59,10 +62,15 @@ def run_experiment(seed=42, n_samples=1000):
     train_indices, test_indices = train_test_split(
         np.arange(n_samples), test_size=0.25, random_state=seed, stratify=labels
     )
-    model = Pipeline([
-        ("scaler", StandardScaler()),
-        ("classifier", LogisticRegression(C=1.0, solver="lbfgs", max_iter=1000, random_state=seed)),
-    ])
+    model = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            (
+                "classifier",
+                LogisticRegression(C=1.0, solver="lbfgs", max_iter=1000, random_state=seed),
+            ),
+        ]
+    )
     model.fit(features[train_indices], labels[train_indices])
     probabilities = model.predict_proba(features[test_indices])[:, 1]
     test_labels = labels[test_indices]
@@ -123,8 +131,11 @@ def run_experiment(seed=42, n_samples=1000):
         },
         "limitations": [
             "Arbitrary simulation coefficients are not calibrated to credit or borrower data.",
-            "One IID holdout does not establish temporal stability, fairness or regulatory compliance.",
-            "No seed, feature or hyperparameter search is performed; scores need not beat the reference.",
-            "Reproduction assumes compatible numerical libraries; versions and holdout predictions are saved.",
+            "One IID holdout does not establish temporal stability, "
+            "fairness or regulatory compliance.",
+            "No seed, feature or hyperparameter search is performed; "
+            "scores need not beat the reference.",
+            "Reproduction assumes compatible numerical libraries; "
+            "versions and holdout predictions are saved.",
         ],
     }

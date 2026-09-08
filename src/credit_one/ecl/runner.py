@@ -13,14 +13,14 @@ Designed to accept base PD from CreditOne's existing XGBoost/Scorecard pipeline.
 """
 
 import os
-import numpy as np
-import pandas as pd
 from typing import Dict, Optional
 
+import pandas as pd
+
+from credit_one.ecl.ecl_calculator import ECLCalculator
 from credit_one.ecl.macro_data import MacroDataLoader
 from credit_one.ecl.model_selection import ModelSelectionPipeline
 from credit_one.ecl.scenario_engine import ScenarioEngine
-from credit_one.ecl.ecl_calculator import ECLCalculator
 from credit_one.ecl.visualization import ECLVisualizer
 
 
@@ -108,17 +108,26 @@ class ECLRunner:
 
         # Step 1: Macro data — default to bundled real US data
         if verbose:
-            print(f"\n--- Step 1: Macro-Economic Data ---")
+            print("\n--- Step 1: Macro-Economic Data ---")
         if macro_df is None:
             macro_df = self.macro_loader.load_bundled()
             if verbose:
                 print(f"Loaded bundled US macro data: {len(macro_df)} quarters")
-                d0 = macro_df['date'].iloc[0]
-                d1 = macro_df['date'].iloc[-1]
+                d0 = macro_df["date"].iloc[0]
+                d1 = macro_df["date"].iloc[-1]
                 print(f"  Date range: {d0.strftime('%Y-%m')} to {d1.strftime('%Y-%m')}")
-                print(f"  GDP growth: [{macro_df['gdp_growth'].min():.1f}%, {macro_df['gdp_growth'].max():.1f}%]")
-                print(f"  Unemployment: [{macro_df['unemployment_rate'].min():.1f}%, {macro_df['unemployment_rate'].max():.1f}%]")
-                print(f"  Default rate: [{macro_df['observed_default_rate'].min():.4%}, {macro_df['observed_default_rate'].max():.4%}]")
+                print(
+                    f"  GDP growth: [{macro_df['gdp_growth'].min():.1f}%, "
+                    f"{macro_df['gdp_growth'].max():.1f}%]"
+                )
+                print(
+                    f"  Unemployment: [{macro_df['unemployment_rate'].min():.1f}%, "
+                    f"{macro_df['unemployment_rate'].max():.1f}%]"
+                )
+                print(
+                    f"  Default rate: [{macro_df['observed_default_rate'].min():.4%}, "
+                    f"{macro_df['observed_default_rate'].max():.4%}]"
+                )
         else:
             macro_df = self.macro_loader.load_dataframe(macro_df)
             if verbose:
@@ -126,7 +135,7 @@ class ECLRunner:
 
         # Step 2: Model selection (with VIF, walk-forward CV, DW)
         if verbose:
-            print(f"\n--- Step 2: Model Selection (Enhanced) ---")
+            print("\n--- Step 2: Model Selection (Enhanced) ---")
         self.model_selector = ModelSelectionPipeline(
             model_types=model_types or ["logistic", "linear"],
             max_lag=max_lag,
@@ -143,14 +152,14 @@ class ECLRunner:
             print(f"  OOS RMSE: {best_info['oos_rmse']:.8f}")
             print(f"  Max VIF: {best_info.get('max_vif', 'N/A')}")
             print(f"  Durbin-Watson: {best_info.get('durbin_watson', 'N/A')}")
-            if best_info.get('vif_flag'):
-                print(f"  ⚠ VIF flag: multicollinearity detected")
-            if best_info.get('pvalue_flag'):
-                print(f"  ⚠ P-value flag: insignificant coefficients")
+            if best_info.get("vif_flag"):
+                print("  ⚠ VIF flag: multicollinearity detected")
+            if best_info.get("pvalue_flag"):
+                print("  ⚠ P-value flag: insignificant coefficients")
 
         # Step 3: VAR-based scenario generation with Monte Carlo
         if verbose:
-            print(f"\n--- Step 3: VAR Scenario Generation ---")
+            print("\n--- Step 3: VAR Scenario Generation ---")
         self.scenario_engine = ScenarioEngine(
             horizon_quarters=horizon_quarters,
             n_simulations=n_simulations,
@@ -168,9 +177,10 @@ class ECLRunner:
 
         # Step 4: Forward PD projection
         if verbose:
-            print(f"\n--- Step 4: Forward PD Projection ---")
+            print("\n--- Step 4: Forward PD Projection ---")
         self.ecl_calculator = ECLCalculator(
-            lgd=self.lgd, ead=self.ead,
+            lgd=self.lgd,
+            ead=self.ead,
         )
         scenario_pds = self.ecl_calculator.compute_scenario_pds(
             model=best_model,
@@ -184,7 +194,7 @@ class ECLRunner:
 
         # Step 5: ECL calculation
         if verbose:
-            print(f"\n--- Step 5: ECL Calculation ---")
+            print("\n--- Step 5: ECL Calculation ---")
         ecl_result = self.ecl_calculator.compute_ecl(
             scenario_pds=scenario_pds,
             scenario_engine=self.scenario_engine,
@@ -203,15 +213,45 @@ class ECLRunner:
 
         # Step 6: Sensitivity analysis
         if verbose:
-            print(f"\n--- Step 6: Sensitivity Analysis ---")
+            print("\n--- Step 6: Sensitivity Analysis ---")
 
         # 为 5 场景生成合理的权重配置
         weight_shifts = [
-            {"severe_downside": 0.125, "downside": 0.225, "base": 0.300, "upside": 0.225, "severe_upside": 0.125},
-            {"severe_downside": 0.200, "downside": 0.300, "base": 0.250, "upside": 0.150, "severe_upside": 0.100},
-            {"severe_downside": 0.050, "downside": 0.150, "base": 0.400, "upside": 0.250, "severe_upside": 0.150},
-            {"severe_downside": 0.200, "downside": 0.200, "base": 0.200, "upside": 0.200, "severe_upside": 0.200},
-            {"severe_downside": 0.300, "downside": 0.300, "base": 0.200, "upside": 0.100, "severe_upside": 0.100},
+            {
+                "severe_downside": 0.125,
+                "downside": 0.225,
+                "base": 0.300,
+                "upside": 0.225,
+                "severe_upside": 0.125,
+            },
+            {
+                "severe_downside": 0.200,
+                "downside": 0.300,
+                "base": 0.250,
+                "upside": 0.150,
+                "severe_upside": 0.100,
+            },
+            {
+                "severe_downside": 0.050,
+                "downside": 0.150,
+                "base": 0.400,
+                "upside": 0.250,
+                "severe_upside": 0.150,
+            },
+            {
+                "severe_downside": 0.200,
+                "downside": 0.200,
+                "base": 0.200,
+                "upside": 0.200,
+                "severe_upside": 0.200,
+            },
+            {
+                "severe_downside": 0.300,
+                "downside": 0.300,
+                "base": 0.200,
+                "upside": 0.100,
+                "severe_upside": 0.100,
+            },
         ]
         sensitivity_df = self.ecl_calculator.sensitivity_analysis(
             scenario_pds=scenario_pds,
@@ -223,14 +263,18 @@ class ECLRunner:
 
         # Step 7: Visualizations
         if verbose:
-            print(f"\n--- Step 7: Generating Visualizations ---")
+            print("\n--- Step 7: Generating Visualizations ---")
         weighted_pd = self.ecl_calculator.compute_weighted_pd(
-            scenario_pds, self.scenario_engine,
+            scenario_pds,
+            self.scenario_engine,
         )
 
         self.visualizer.plot_model_selection(selection_results, save=True)
         self.visualizer.plot_pd_term_structure(
-            scenario_pds, weighted_pd, horizon_quarters, save=True,
+            scenario_pds,
+            weighted_pd,
+            horizon_quarters,
+            save=True,
         )
         self.visualizer.plot_ecl_waterfall(ecl_result, save=True)
         self.visualizer.plot_sensitivity(sensitivity_df, save=True)
@@ -280,18 +324,24 @@ class ECLRunner:
             {"metric": "Horizon (quarters)", "value": str(ecl_result["horizon_quarters"])},
         ]
         for name, contrib in ecl_result["scenario_contributions"].items():
-            rows.append({
-                "metric": f"{name} - 12m contribution",
-                "value": f"${contrib['ecl_12m_contribution']:,.2f}",
-            })
-            rows.append({
-                "metric": f"{name} - lifetime contribution",
-                "value": f"${contrib['ecl_lifetime_contribution']:,.2f}",
-            })
-            rows.append({
-                "metric": f"{name} - terminal cum PD",
-                "value": f"{contrib['terminal_cumulative_pd']:.4%}",
-            })
+            rows.append(
+                {
+                    "metric": f"{name} - 12m contribution",
+                    "value": f"${contrib['ecl_12m_contribution']:,.2f}",
+                }
+            )
+            rows.append(
+                {
+                    "metric": f"{name} - lifetime contribution",
+                    "value": f"${contrib['ecl_lifetime_contribution']:,.2f}",
+                }
+            )
+            rows.append(
+                {
+                    "metric": f"{name} - terminal cum PD",
+                    "value": f"{contrib['terminal_cumulative_pd']:.4%}",
+                }
+            )
 
         pd.DataFrame(rows).to_csv(filepath, index=False)
         print(f"ECL summary exported to {filepath}")

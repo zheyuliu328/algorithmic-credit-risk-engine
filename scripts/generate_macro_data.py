@@ -11,12 +11,12 @@ Values are approximate and calibrated to match real FRED data trends.
 This file serves as a bundled fallback when FRED API is unavailable.
 """
 
-import numpy as np
 import pandas as pd
 
 # fmt: off
 # Approximate quarterly US macro data based on FRED historical patterns
-# Each row: (year, quarter, gdp_growth_annualized, unemployment_rate, fed_funds_rate, delinquency_rate)
+# Each row: year, quarter, gdp_growth_annualized, unemployment_rate,
+# fed_funds_rate, delinquency_rate.
 RAW_DATA = [
     # 2000: Strong economy, dot-com peak
     (2000, 1,  1.2, 4.0, 5.68, 4.10),
@@ -152,13 +152,15 @@ def main():
     for year, quarter, gdp, unemp, ffr, delinq in RAW_DATA:
         month = (quarter - 1) * 3 + 1
         date = f"{year}-{month:02d}-01"
-        rows.append({
-            "date": date,
-            "gdp_growth": gdp,
-            "unemployment_rate": unemp,
-            "interest_rate": ffr,
-            "observed_default_rate": round(delinq / 100, 6),
-        })
+        rows.append(
+            {
+                "date": date,
+                "gdp_growth": gdp,
+                "unemployment_rate": unemp,
+                "interest_rate": ffr,
+                "observed_default_rate": round(delinq / 100, 6),
+            }
+        )
 
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"])
@@ -167,7 +169,7 @@ def main():
     df.to_csv(out_path, index=False)
     print(f"Saved {len(df)} quarters to {out_path}")
     print(f"Date range: {df['date'].min()} to {df['date'].max()}")
-    print(f"\nSummary statistics:")
+    print("\nSummary statistics:")
     print(df.describe().round(4))
 
 

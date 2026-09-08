@@ -17,11 +17,11 @@ Five named scenarios (percentile-based):
 This replaces the naive independent exponential convergence approach.
 """
 
+from typing import Dict, Optional
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
 from statsmodels.tsa.api import VAR
-
 
 # 场景百分位数定义
 SCENARIO_PERCENTILES = {
@@ -139,7 +139,7 @@ class ScenarioEngine:
 
         # 用历史数据最后 var_order 个观测值作为初始状态
         data = self._historical_df[MACRO_VARS].values
-        lagged_init = data[-self.var_order:]  # (var_order, n_vars)
+        lagged_init = data[-self.var_order :]  # (var_order, n_vars)
 
         # VAR 系数: intercept + lag coefficients
         coefs = self._var_result.coefs  # (var_order, n_vars, n_vars)
@@ -216,8 +216,8 @@ class ScenarioEngine:
         # score = mean(GDP) - mean(UR) + 0.5 * mean(IR)
         # 高 score = 好经济 = upside
         path_scores = (
-            self._simulated_paths[:, :, 0].mean(axis=1)        # GDP
-            - self._simulated_paths[:, :, 1].mean(axis=1)      # -Unemployment
+            self._simulated_paths[:, :, 0].mean(axis=1)  # GDP
+            - self._simulated_paths[:, :, 1].mean(axis=1)  # -Unemployment
             + 0.5 * self._simulated_paths[:, :, 2].mean(axis=1)  # +Interest(略)
         )
         sorted_indices = np.argsort(path_scores)
@@ -376,9 +376,7 @@ class ScenarioEngine:
             for i, caused in enumerate(MACRO_VARS):
                 for j, causing in enumerate(MACRO_VARS):
                     if i != j:
-                        test = self._var_result.test_causality(
-                            caused, [causing], kind="f"
-                        )
+                        test = self._var_result.test_causality(caused, [causing], kind="f")
                         granger[f"{causing}→{caused}"] = round(test.pvalue, 4)
             diag["granger_causality_pvalues"] = granger
         except Exception:

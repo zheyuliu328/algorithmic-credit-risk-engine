@@ -9,21 +9,21 @@ Generates publication-quality charts for:
 - Fan chart showing Monte Carlo simulation distribution
 """
 
-import numpy as np
-import pandas as pd
+from typing import Dict
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from typing import Dict, Optional
-
+import numpy as np
+import pandas as pd
 
 # 5 场景调色板
 COLORS = {
     "severe_downside": "#B71C1C",  # 深红
-    "downside": "#F44336",          # 红
-    "base": "#2196F3",              # 蓝
-    "upside": "#4CAF50",            # 绿
-    "severe_upside": "#1B5E20",     # 深绿
-    "weighted": "#FF9800",          # 橙
+    "downside": "#F44336",  # 红
+    "base": "#2196F3",  # 蓝
+    "upside": "#4CAF50",  # 绿
+    "severe_upside": "#1B5E20",  # 深绿
+    "weighted": "#FF9800",  # 橙
 }
 
 
@@ -108,8 +108,7 @@ class ECLVisualizer:
         if has_dw:
             ax = axes[idx]
             colors_dw = [
-                "#F44336" if dw < 1.5 or dw > 2.5 else "#4CAF50"
-                for dw in top["durbin_watson"]
+                "#F44336" if dw < 1.5 or dw > 2.5 else "#4CAF50" for dw in top["durbin_watson"]
             ]
             ax.barh(top["model_label"], top["durbin_watson"], color=colors_dw, alpha=0.8)
             ax.axvline(x=2.0, color="blue", linestyle="--", alpha=0.5, label="DW=2 (ideal)")
@@ -142,10 +141,25 @@ class ECLVisualizer:
         # Left: Marginal PD
         for name, pds in scenario_pds.items():
             color = self._get_color(name)
-            ax1.plot(quarters, pds * 100, marker="o", markersize=3, label=name.replace("_", " ").title(),
-                     color=color, linewidth=1.5)
-        ax1.plot(quarters, weighted_pd * 100, marker="s", markersize=4, label="Weighted",
-                 color=COLORS["weighted"], linewidth=2.5, linestyle="--")
+            ax1.plot(
+                quarters,
+                pds * 100,
+                marker="o",
+                markersize=3,
+                label=name.replace("_", " ").title(),
+                color=color,
+                linewidth=1.5,
+            )
+        ax1.plot(
+            quarters,
+            weighted_pd * 100,
+            marker="s",
+            markersize=4,
+            label="Weighted",
+            color=COLORS["weighted"],
+            linewidth=2.5,
+            linestyle="--",
+        )
         ax1.set_xlabel("Quarter")
         ax1.set_ylabel("Marginal PD (%)")
         ax1.set_title("Quarterly Marginal PD by Scenario")
@@ -156,11 +170,26 @@ class ECLVisualizer:
         for name, pds in scenario_pds.items():
             cum_pd = 1 - np.cumprod(1 - pds)
             color = self._get_color(name)
-            ax2.plot(quarters, cum_pd * 100, marker="o", markersize=3, label=name.replace("_", " ").title(),
-                     color=color, linewidth=1.5)
+            ax2.plot(
+                quarters,
+                cum_pd * 100,
+                marker="o",
+                markersize=3,
+                label=name.replace("_", " ").title(),
+                color=color,
+                linewidth=1.5,
+            )
         cum_weighted = 1 - np.cumprod(1 - weighted_pd)
-        ax2.plot(quarters, cum_weighted * 100, marker="s", markersize=4, label="Weighted",
-                 color=COLORS["weighted"], linewidth=2.5, linestyle="--")
+        ax2.plot(
+            quarters,
+            cum_weighted * 100,
+            marker="s",
+            markersize=4,
+            label="Weighted",
+            color=COLORS["weighted"],
+            linewidth=2.5,
+            linestyle="--",
+        )
         ax2.set_xlabel("Quarter")
         ax2.set_ylabel("Cumulative PD (%)")
         ax2.set_title("Cumulative PD by Scenario")
@@ -202,8 +231,14 @@ class ECLVisualizer:
         for bar in bars:
             height = bar.get_height()
             if height > 0:
-                ax1.text(bar.get_x() + bar.get_width() / 2., height,
-                         f"${height:,.0f}", ha="center", va="bottom", fontsize=7)
+                ax1.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    height,
+                    f"${height:,.0f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                )
 
         # Right: Lifetime ECL
         ecl_lt_vals = [contributions[n]["ecl_lifetime_contribution"] for n in names]
@@ -215,8 +250,14 @@ class ECLVisualizer:
         for bar in bars:
             height = bar.get_height()
             if height > 0:
-                ax2.text(bar.get_x() + bar.get_width() / 2., height,
-                         f"${height:,.0f}", ha="center", va="bottom", fontsize=7)
+                ax2.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    height,
+                    f"${height:,.0f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                )
 
         fig.suptitle(
             f"ECL Scenario Contribution (LGD={ecl_result['lgd']:.0%}, "
@@ -243,10 +284,22 @@ class ECLVisualizer:
         x = np.arange(len(sensitivity_df))
         width = 0.35
 
-        bars1 = ax.bar(x - width / 2, sensitivity_df["ecl_12m"], width,
-                        label="12-Month ECL", color="#2196F3", alpha=0.85)
-        bars2 = ax.bar(x + width / 2, sensitivity_df["ecl_lifetime"], width,
-                        label="Lifetime ECL", color="#F44336", alpha=0.85)
+        bars1 = ax.bar(
+            x - width / 2,
+            sensitivity_df["ecl_12m"],
+            width,
+            label="12-Month ECL",
+            color="#2196F3",
+            alpha=0.85,
+        )
+        bars2 = ax.bar(
+            x + width / 2,
+            sensitivity_df["ecl_lifetime"],
+            width,
+            label="Lifetime ECL",
+            color="#F44336",
+            alpha=0.85,
+        )
 
         # X-axis labels: show weight config
         labels = []
@@ -267,8 +320,14 @@ class ECLVisualizer:
         for bars in [bars1, bars2]:
             for bar in bars:
                 height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width() / 2., height,
-                        f"${height:,.0f}", ha="center", va="bottom", fontsize=7)
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2.0,
+                    height,
+                    f"${height:,.0f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                )
 
         fig.tight_layout()
 
@@ -310,14 +369,17 @@ class ECLVisualizer:
             quarters = np.arange(1, len(df) + 1)
 
             # 90% band (p5 - p95)
-            ax.fill_between(quarters, df["p5"], df["p95"], alpha=0.15, color="#2196F3",
-                           label="5-95th pct")
+            ax.fill_between(
+                quarters, df["p5"], df["p95"], alpha=0.15, color="#2196F3", label="5-95th pct"
+            )
             # 80% band (p10 - p90)
-            ax.fill_between(quarters, df["p10"], df["p90"], alpha=0.25, color="#2196F3",
-                           label="10-90th pct")
+            ax.fill_between(
+                quarters, df["p10"], df["p90"], alpha=0.25, color="#2196F3", label="10-90th pct"
+            )
             # 50% band (p25 - p75)
-            ax.fill_between(quarters, df["p25"], df["p75"], alpha=0.4, color="#2196F3",
-                           label="25-75th pct")
+            ax.fill_between(
+                quarters, df["p25"], df["p75"], alpha=0.4, color="#2196F3", label="25-75th pct"
+            )
             # Median
             ax.plot(quarters, df["p50"], color="#1565C0", linewidth=2, label="Median")
 

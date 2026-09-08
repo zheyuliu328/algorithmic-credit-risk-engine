@@ -9,9 +9,9 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
 from credit_one import run, synthetic_demo
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_metrics_use_predictions():
@@ -22,10 +22,15 @@ def test_metrics_use_predictions():
     assert changed == pytest.approx({"auc": 1.0, "ks": 1.0, "brier": 0.025})
 
 
-@pytest.mark.parametrize("labels,scores", [
-    ([0, 0], [0.1, 0.2]), ([0, 1], [0.1, float("nan")]),
-    ([0, 1], [0.1, 1.1]), ([0, 1], [0.1]),
-])
+@pytest.mark.parametrize(
+    "labels,scores",
+    [
+        ([0, 0], [0.1, 0.2]),
+        ([0, 1], [0.1, float("nan")]),
+        ([0, 1], [0.1, 1.1]),
+        ([0, 1], [0.1]),
+    ],
+)
 def test_metrics_reject_invalid_inputs(labels, scores):
     with pytest.raises(ValueError):
         synthetic_demo.classification_metrics(labels, scores)
@@ -61,7 +66,9 @@ def test_heldout_feature_changes_cannot_change_fitted_parameters(monkeypatch):
     report = synthetic_demo.run_experiment(seed=42, n_samples=400)
     features, labels = synthetic_demo.generate_dataset(seed=42, n_samples=400)
     features[report["split"]["test_indices"]] += 100.0
-    monkeypatch.setattr(synthetic_demo, "generate_dataset", lambda seed, n_samples: (features, labels))
+    monkeypatch.setattr(
+        synthetic_demo, "generate_dataset", lambda seed, n_samples: (features, labels)
+    )
     changed = synthetic_demo.run_experiment(seed=42, n_samples=400)
     assert changed["fit"] == report["fit"]
     assert changed["held_out"] != report["held_out"]
@@ -72,9 +79,21 @@ def test_demo_cli_from_unrelated_directory(tmp_path):
     second = tmp_path / "second" / "report.json"
     for output in (first, second):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "src/credit_one/run.py"), "demo", "--seed", "7",
-             "--samples", "400", "--output", str(output)],
-            cwd=tmp_path, capture_output=True, text=True, check=False,
+            [
+                sys.executable,
+                str(ROOT / "src/credit_one/run.py"),
+                "demo",
+                "--seed",
+                "7",
+                "--samples",
+                "400",
+                "--output",
+                str(output),
+            ],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         assert result.returncode == 0, result.stderr
         assert "Held-out AUC=" in result.stdout
@@ -89,8 +108,18 @@ def test_demo_cli_from_unrelated_directory(tmp_path):
 def test_validate_is_nonzero_and_does_not_write(tmp_path, extra):
     output = tmp_path / "never-created" / "validation.json"
     result = subprocess.run(
-        [sys.executable, str(ROOT / "src/credit_one/run.py"), "validate", "--output", str(output), *extra],
-        cwd=tmp_path, capture_output=True, text=True, check=False,
+        [
+            sys.executable,
+            str(ROOT / "src/credit_one/run.py"),
+            "validate",
+            "--output",
+            str(output),
+            *extra,
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     assert result.returncode != 0
     assert "NOT IMPLEMENTED" in result.stderr
@@ -113,5 +142,14 @@ def test_dashboard_uses_actual_app_and_propagates_failure(monkeypatch):
 
     monkeypatch.setattr(run.subprocess, "run", fake_run)
     assert run.main(["dashboard", "--port", "8502"]) == 7
-    assert calls == [[sys.executable, "-m", "streamlit", "run",
-                      str(ROOT / "src/credit_one/app.py"), "--server.port", "8502"]]
+    assert calls == [
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(ROOT / "src/credit_one/app.py"),
+            "--server.port",
+            "8502",
+        ]
+    ]

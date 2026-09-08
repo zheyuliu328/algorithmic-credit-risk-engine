@@ -2,12 +2,14 @@
 Load and preprocess Lending Club dataset for IFRS 9 ECL Pipeline
 """
 
-import pandas as pd
 import numpy as np
-import os
+import pandas as pd
 
 # Dataset path
-DATASET_PATH = "/Users/zheyuliu/.cache/kagglehub/datasets/wordsforthewise/lending-club/versions/3/accepted_2007_to_2018q4.csv/accepted_2007_to_2018Q4.csv"
+DATASET_PATH = (
+    "/Users/zheyuliu/.cache/kagglehub/datasets/wordsforthewise/lending-club/versions/3/"
+    "accepted_2007_to_2018q4.csv/accepted_2007_to_2018Q4.csv"
+)
 
 
 def load_and_preprocess_lending_club(n_samples=None, random_state=42):

@@ -1,6 +1,6 @@
 """
-Model Validation Framework - Production-grade model validation
-Implements SR 11-7 compliant model risk management
+Educational model-metric utilities for caller-supplied labels and predictions.
+These functions do not establish independent validation or regulatory compliance.
 
 Key Components:
 - Out-of-Time (OOT) Validation
@@ -9,14 +9,13 @@ Key Components:
 - Calibration Assessment
 """
 
-import numpy as np
-import pandas as pd
-from scipy import stats
-from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix
-import matplotlib.pyplot as plt
 import json
 from datetime import datetime
-import sqlite3
+
+import numpy as np
+from scipy import stats
+from scipy.integrate import trapezoid
+from sklearn.metrics import roc_auc_score, roc_curve
 
 
 class ModelValidator:
@@ -112,11 +111,9 @@ class ModelValidator:
             "ks_score": round(ks_score, 4),
             "p_value": round(p_value, 6),
             "significant": p_value < 0.05,
-            "discrimination_power": "Strong"
-            if ks_score > 0.4
-            else "Moderate"
-            if ks_score > 0.3
-            else "Weak",
+            "discrimination_power": (
+                "Strong" if ks_score > 0.4 else "Moderate" if ks_score > 0.3 else "Weak"
+            ),
         }
 
         self.validation_results["ks_test"] = results
@@ -156,8 +153,8 @@ class ModelValidator:
 
         # Calculate Accuracy Ratio (Gini coefficient)
         ar_random = 0.5
-        ar_model = np.trapz(cap_curve, x_axis)
-        ar_perfect = np.trapz(perfect_curve, x_axis)
+        ar_model = trapezoid(cap_curve, x_axis)
+        ar_perfect = trapezoid(perfect_curve, x_axis)
 
         accuracy_ratio = (ar_model - ar_random) / (ar_perfect - ar_random)
         gini_coefficient = 2 * accuracy_ratio
@@ -166,13 +163,15 @@ class ModelValidator:
             "accuracy_ratio": round(accuracy_ratio, 4),
             "gini_coefficient": round(gini_coefficient, 4),
             "model_auc": round(ar_model, 4),
-            "interpretation": "Excellent"
-            if accuracy_ratio > 0.8
-            else "Good"
-            if accuracy_ratio > 0.6
-            else "Acceptable"
-            if accuracy_ratio > 0.4
-            else "Poor",
+            "interpretation": (
+                "Excellent"
+                if accuracy_ratio > 0.8
+                else (
+                    "Good"
+                    if accuracy_ratio > 0.6
+                    else "Acceptable" if accuracy_ratio > 0.4 else "Poor"
+                )
+            ),
         }
 
         self.validation_results["cap_curve"] = results
@@ -245,13 +244,14 @@ class ModelValidator:
             "model_name": self.model_name,
             "model_version": self.model_version,
             "validation_timestamp": self.timestamp,
-            "validation_framework": "SR 11-7 Compliant",
+            "validation_framework": "Educational metric checks; not regulatory approval",
             "results": self.validation_results,
             "overall_assessment": self._assess_overall(),
         }
 
-        with open(output_path, "w") as f:
-            json.dump(report, f, indent=2)
+        serialized = json.dumps(report, indent=2, allow_nan=False) + "\n"
+        with open(output_path, "x", encoding="utf-8") as f:
+            f.write(serialized)
 
         print(f"✓ Validation report saved to {output_path}")
         return report
@@ -297,10 +297,15 @@ class ModelValidator:
             assessments.append(
                 {
                     "dimension": "Out-of-Time Stability",
-                    "status": "PASS"
-                    if oot["degradation_acceptable"] and oot["psi_acceptable"]
-                    else "FAIL",
-                    "details": f"AUC degradation: {oot['auc_degradation']:.4f}, PSI: {oot['psi_score']:.4f}",
+                    "status": (
+                        "PASS"
+                        if oot["degradation_acceptable"] and oot["psi_acceptable"]
+                        else "FAIL"
+                    ),
+                    "details": (
+                        f"AUC degradation: {oot['auc_degradation']:.4f}, "
+                        f"PSI: {oot['psi_score']:.4f}"
+                    ),
                 }
             )
 
@@ -310,7 +315,9 @@ class ModelValidator:
                 {
                     "dimension": "Discrimination Power (K-S)",
                     "status": "PASS" if ks["ks_score"] > 0.3 else "WARNING",
-                    "details": f"K-S score: {ks['ks_score']:.4f}, Power: {ks['discrimination_power']}",
+                    "details": (
+                        f"K-S score: {ks['ks_score']:.4f}, " f"Power: {ks['discrimination_power']}"
+                    ),
                 }
             )
 
@@ -320,7 +327,9 @@ class ModelValidator:
                 {
                     "dimension": "Accuracy Ratio (Gini)",
                     "status": "PASS" if cap["accuracy_ratio"] > 0.4 else "WARNING",
-                    "details": f"AR: {cap['accuracy_ratio']:.4f}, Gini: {cap['gini_coefficient']:.4f}",
+                    "details": (
+                        f"AR: {cap['accuracy_ratio']:.4f}, " f"Gini: {cap['gini_coefficient']:.4f}"
+                    ),
                 }
             )
 
@@ -383,7 +392,8 @@ def run_full_validation(
         print(f"  Train AUC: {oot_results['train_auc']:.4f}")
         print(f"  OOT AUC: {oot_results['oot_auc']:.4f}")
         print(
-            f"  Degradation: {oot_results['auc_degradation']:.4f} {'✓' if oot_results['degradation_acceptable'] else '✗'}"
+            f"  Degradation: {oot_results['auc_degradation']:.4f} "
+            f"{'✓' if oot_results['degradation_acceptable'] else '✗'}"
         )
         print(
             f"  PSI: {oot_results['psi_score']:.4f} {'✓' if oot_results['psi_acceptable'] else '✗'}"
@@ -408,7 +418,8 @@ def run_full_validation(
     cal_results = validator.calibration_assessment(y_true_test, y_pred_test)
     print(f"  Expected Calibration Error: {cal_results['expected_calibration_error']:.4f}")
     print(
-        f"  Status: {'✓ Acceptable' if cal_results['calibration_acceptable'] else '⚠ Review needed'}"
+        "  Status: "
+        f"{'✓ Acceptable' if cal_results['calibration_acceptable'] else '⚠ Review needed'}"
     )
 
     # Generate report
@@ -421,9 +432,7 @@ def run_full_validation(
         status_icon = (
             "✓"
             if assessment["status"] == "PASS"
-            else "⚠"
-            if assessment["status"] == "WARNING"
-            else "✗"
+            else "⚠" if assessment["status"] == "WARNING" else "✗"
         )
         print(f"{status_icon} {assessment['dimension']}: {assessment['status']}")
         print(f"   {assessment['details']}")
@@ -431,33 +440,20 @@ def run_full_validation(
     return report
 
 
-if __name__ == "__main__":
-    # Example: Generate synthetic validation data
-    np.random.seed(42)
+def main(argv=None):
+    """Reject standalone validation until a supplied-model workflow exists."""
+    import argparse
+    import sys
 
-    # Simulate model predictions
-    n_train, n_test, n_oot = 8000, 2000, 2000
-
-    # Training data
-    y_train = np.random.binomial(1, 0.15, n_train)
-    y_pred_train = np.clip(y_train * 0.7 + np.random.beta(2, 5, n_train) * 0.3, 0, 1)
-
-    # Test data
-    y_test = np.random.binomial(1, 0.15, n_test)
-    y_pred_test = np.clip(y_test * 0.7 + np.random.beta(2, 5, n_test) * 0.3, 0, 1)
-
-    # OOT data (slightly different distribution to simulate time decay)
-    y_oot = np.random.binomial(1, 0.18, n_oot)
-    y_pred_oot = np.clip(y_oot * 0.65 + np.random.beta(2, 4, n_oot) * 0.35, 0, 1)
-
-    # Run validation
-    results = run_full_validation(
-        y_train,
-        y_pred_train,
-        y_test,
-        y_pred_test,
-        y_oot,
-        y_pred_oot,
-        model_name="XGBoost_PD_Model",
-        model_version="v2.0_PRODUCTION",
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args(argv)
+    print(
+        "NOT IMPLEMENTED: standalone validation has no fitted-model input workflow. "
+        "No fabricated predictions, metrics or report were generated.",
+        file=sys.stderr,
     )
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
