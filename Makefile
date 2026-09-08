@@ -1,3 +1,5 @@
+PYTHON ?= python3
+
 .PHONY: help install install-dev build test test-cov lint format clean \
         config-check demo quickstart run-real verify \
         docker-build docker-run release
@@ -7,26 +9,26 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install dependencies
-	pip install -r requirements.txt
+	$(PYTHON) -m pip install -r requirements.txt
 
 install-dev: ## Install with dev dependencies
-	pip install -e ".[dev]"
+	$(PYTHON) -m pip install -e ".[dev]"
 
 build: ## Build package
-	python -m build
+	$(PYTHON) -m build
 
 test: ## Run tests
-	pytest
+	$(PYTHON) -m pytest
 
 test-cov: ## Run tests with coverage
-	pytest --cov=src --cov-report=html
+	$(PYTHON) -m pytest --cov=src --cov-report=html
 
 lint: ## Run linters
-	ruff check . || true
+	$(PYTHON) -m ruff check .
 
 format: ## Format code
-	black . 2>/dev/null || true
-	ruff check --fix . 2>/dev/null || true
+	$(PYTHON) -m black .
+	$(PYTHON) -m ruff check --fix .
 
 clean: ## Clean build artifacts
 	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .mypy_cache/ htmlcov/
@@ -34,10 +36,10 @@ clean: ## Clean build artifacts
 	find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
 config-check: ## Check configuration
-	python config/validator.py config/config.yaml 2>/dev/null || echo "Config check not available"
+	$(PYTHON) config/validator.py config/config.yaml
 
 demo: ## Run demo with sample data
-	python src/credit_one/run.py demo
+	$(PYTHON) src/credit_one/run.py demo
 
 quickstart: ## Quick start (default offline)
 	$(MAKE) demo
@@ -47,10 +49,10 @@ run-real: ## Run with real data (usage: make run-real CSV=path/to/data.csv)
 		echo "Usage: make run-real CSV=path/to/data.csv"; \
 		exit 1; \
 	fi
-	python scripts/run_real.py $(CSV) --output artifacts
+	$(PYTHON) scripts/run_real.py $(CSV) --output artifacts
 
 verify: ## Run full verification suite
-	@bash scripts/verify.sh
+	$(PYTHON) scripts/verify.py
 
 docker-build: ## Build Docker image
 	docker build -t $(shell basename $(PWD)):latest .

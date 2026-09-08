@@ -10,13 +10,13 @@ Standard Thresholds:
 Reference: SR 11-7 Model Risk Management Guidelines
 """
 
+import json
+import sqlite3
+from datetime import datetime
+from typing import Dict
+
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-import json
-import os
-from typing import Dict, List, Tuple
-import sqlite3
 
 
 class PSIMonitor:
@@ -65,7 +65,8 @@ class PSIMonitor:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS psi_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TEXT NOT NULL,
@@ -78,9 +79,11 @@ class PSIMonitor:
                 period_end TEXT,
                 notes TEXT
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS psi_details (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 log_id INTEGER,
@@ -90,7 +93,8 @@ class PSIMonitor:
                 psi_contribution REAL,
                 FOREIGN KEY (log_id) REFERENCES psi_logs (id)
             )
-        """)
+        """
+        )
 
         conn.commit()
         conn.close()
@@ -239,8 +243,8 @@ class PSIMonitor:
         # Insert main log
         cursor.execute(
             """
-            INSERT INTO psi_logs 
-            (timestamp, model_name, model_version, psi_score, alert_level, 
+            INSERT INTO psi_logs
+            (timestamp, model_name, model_version, psi_score, alert_level,
              sample_size, period_start, period_end, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -305,7 +309,9 @@ class PSIMonitor:
             WHERE model_name = ? AND model_version = ?
             AND timestamp >= datetime('now', '-{} days')
             ORDER BY timestamp DESC
-        """.format(days)
+        """.format(
+            days
+        )
 
         df = pd.read_sql_query(query, conn, params=(self.model_name, self.model_version))
         conn.close()

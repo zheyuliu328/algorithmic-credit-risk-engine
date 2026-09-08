@@ -2,74 +2,73 @@ name: CI
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [master, main]
   pull_request:
-    branches: [ master, main ]
+    branches: [master, main]
+permissions:
+  contents: read
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: |
-        pip install ruff black
-        pip install -r requirements.txt
-    - name: Lint with ruff
-      run: ruff check . --fix
-    - name: Format check
-      run: black --check . || echo "Format issues found"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install check tools
+        run: python -m pip install 'ruff==0.16.6' 'black==25.11.0'
+      - name: Lint with ruff
+        run: ruff check .
+      - name: Format check
+        run: black --check .
 
   test:
     runs-on: ubuntu-latest
     needs: lint
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: |
-        pip install pytest
-        pip install -r requirements.txt
-    - name: Run unit tests
-      run: pytest tests/ -v -m "not integration"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install package and all test dependencies
+        run: python -m pip install ".[dev]"
+      - name: Run complete tests
+        run: python -m pytest tests/ -v
+        env:
+          MPLBACKEND: Agg
 
   e2e:
     runs-on: ubuntu-latest
     needs: test
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: |
-        pip install pytest
-        pip install -r requirements.txt
-    - name: Run e2e tests
-      run: pytest tests/test_e2e.py -v
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install package and test dependencies
+        run: python -m pip install ".[dev]"
+      - name: Run e2e tests
+        run: python -m pytest tests/test_e2e.py -v
+      - name: Run the installed package outside the checkout
+        working-directory: ${{ runner.temp }}
+        run: credit-one demo --seed 42 --output installed-package-report.json
 
   verify:
     runs-on: ubuntu-latest
     needs: e2e
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-    - name: Run verify
-      run: make verify
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install verification dependencies
+        run: python -m pip install ".[dev]"
+      - name: Run all verification steps without deleting artifacts
+        run: make verify
+        env:
+          MPLBACKEND: Agg

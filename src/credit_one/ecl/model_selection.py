@@ -20,16 +20,15 @@ aligned with IFRS 9 governance requirements.
 """
 
 import itertools
-import warnings
+from typing import Dict, List, Optional
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
-
 import statsmodels.api as sm
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.stats.stattools import durbin_watson
 
-from credit_one.ecl.pd_forward_model import PDForwardModel, MACRO_VARIABLES
+from credit_one.ecl.pd_forward_model import MACRO_VARIABLES, PDForwardModel
 
 
 class ModelSelectionPipeline:
@@ -113,9 +112,7 @@ class ModelSelectionPipeline:
             Comparison table with all candidate models ranked.
         """
         self._results = []
-        total_candidates = (
-            len(self.model_types) * len(self.variable_sets) * (self.max_lag + 1)
-        )
+        total_candidates = len(self.model_types) * len(self.variable_sets) * (self.max_lag + 1)
 
         if verbose:
             print(f"\n{'=' * 70}")
@@ -125,7 +122,11 @@ class ModelSelectionPipeline:
             print(f"Model types: {self.model_types}")
             print(f"Variable sets: {len(self.variable_sets)}")
             print(f"Lag range: 0 to {self.max_lag}")
-            cv_mode = f"Walk-forward ({self.walk_forward_folds} folds)" if self.walk_forward_folds > 0 else f"Simple split ({self.train_ratio:.0%}/{1 - self.train_ratio:.0%})"
+            cv_mode = (
+                f"Walk-forward ({self.walk_forward_folds} folds)"
+                if self.walk_forward_folds > 0
+                else f"Simple split ({self.train_ratio:.0%}/{1 - self.train_ratio:.0%})"
+            )
             print(f"Cross-validation: {cv_mode}")
             print(f"VIF threshold: {self.vif_threshold}")
             print(f"P-value threshold: {self.pvalue_threshold}")
@@ -330,9 +331,7 @@ class ModelSelectionPipeline:
                 continue
 
             try:
-                fold_model = PDForwardModel(
-                    model_type=model_type, variables=variables, lag=lag
-                )
+                fold_model = PDForwardModel(model_type=model_type, variables=variables, lag=lag)
                 fold_model.fit(train_df)
                 rmse = self._compute_oos_rmse(fold_model, test_df)
                 if not np.isnan(rmse):
@@ -364,7 +363,7 @@ class ModelSelectionPipeline:
                 actual = df["observed_default_rate"].values
             elif model.model_type == "probit":
                 pred_pd = np.clip(raw_pred, 1e-6, 1 - 1e-6)
-                actual = (df["observed_default_rate"] > df["observed_default_rate"].median())
+                actual = df["observed_default_rate"] > df["observed_default_rate"].median()
                 actual = actual.astype(float).values
             else:
                 pred_pd = np.clip(raw_pred, 1e-6, 1 - 1e-6)
@@ -445,9 +444,17 @@ class ModelSelectionPipeline:
             return
 
         display_cols = [
-            "rank", "model_label", "aic", "bic", "adj_r2",
-            "oos_rmse", "hl_p_value", "max_vif", "durbin_watson",
-            "max_coef_pvalue", "composite_score",
+            "rank",
+            "model_label",
+            "aic",
+            "bic",
+            "adj_r2",
+            "oos_rmse",
+            "hl_p_value",
+            "max_vif",
+            "durbin_watson",
+            "max_coef_pvalue",
+            "composite_score",
         ]
         available = [c for c in display_cols if c in self._results_df.columns]
         top = self._results_df.head(top_n)[available]
@@ -463,7 +470,10 @@ class ModelSelectionPipeline:
         if flagged_vif > 0:
             print(f"⚠ {flagged_vif} of top {top_n} models flagged for VIF > {self.vif_threshold}")
         if flagged_pv > 0:
-            print(f"⚠ {flagged_pv} of top {top_n} models have insignificant coefficients (p > {self.pvalue_threshold})")
+            print(
+                f"⚠ {flagged_pv} of top {top_n} models have insignificant coefficients "
+                f"(p > {self.pvalue_threshold})"
+            )
 
         print("=" * 70)
 
@@ -501,10 +511,26 @@ class ModelSelectionPipeline:
             raise RuntimeError("Pipeline not run yet. Call run() first.")
 
         export_cols = [
-            "rank", "model_label", "model_type", "variables", "n_variables", "lag",
-            "aic", "bic", "adj_r2", "oos_rmse", "hl_chi2", "hl_p_value",
-            "max_vif", "vif_flag", "durbin_watson", "max_coef_pvalue", "pvalue_flag",
-            "composite_score", "n_obs", "log_likelihood",
+            "rank",
+            "model_label",
+            "model_type",
+            "variables",
+            "n_variables",
+            "lag",
+            "aic",
+            "bic",
+            "adj_r2",
+            "oos_rmse",
+            "hl_chi2",
+            "hl_p_value",
+            "max_vif",
+            "vif_flag",
+            "durbin_watson",
+            "max_coef_pvalue",
+            "pvalue_flag",
+            "composite_score",
+            "n_obs",
+            "log_likelihood",
         ]
         available = [c for c in export_cols if c in self._results_df.columns]
         self._results_df[available].to_csv(filepath, index=False)

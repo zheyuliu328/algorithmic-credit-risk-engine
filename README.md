@@ -1,81 +1,64 @@
 # Algorithmic Credit Risk Engine
 
-Educational credit-scoring prototypes, model-metric utilities, and data-processing examples. The repository is a portfolio demonstration; it is not a deployed, independently validated, or regulatory-compliant credit decision system.
+Educational credit-scoring prototypes, metric utilities and data-processing examples. This portfolio is not a deployed, independently validated or regulatory-compliant credit decision system.
 
-For a separate validation experiment built from fully synthetic time-series data, see [model-risk-lab](https://github.com/zheyuliu328/model-risk-lab). The existing modules here are not evidence of that project's validation results.
+## Install and run
 
-## What is implemented
-
-| Component | Scope |
-| --- | --- |
-| [Offline classification experiment](src/credit_one/synthetic_demo.py) | Fresh independent normal features, logistic latent probabilities, sampled binary labels, train-only scaling and a fitted logistic-regression baseline. Reports recomputable held-out AUC, KS and Brier loss. |
-| [SME scoring prototype](src/credit_one/sme_credit_explainability.py) | Synthetic-data generation, a boosting classifier, optional WoE/logistic scorecard, score scaling, and SHAP integration. These are experimental components, not calibrated production PDs. |
-| [Metric utilities](src/credit_one/model_validation.py) | Functions for AUC, K-S, PSI, CAP/Gini and calibration summaries from supplied labels and predictions. The standalone example fabricates predictions from labels; it does not validate a trained model. |
-| [CSV demonstration](scripts/run_real.py) | Input-column checks and a simple debt-to-income scoring formula. It does not load or train an XGBoost model. |
-| [Streamlit interface](src/credit_one/app.py) | Experimental scoring and drift-monitoring interface. The interface and its optional dependencies were not included in the offline smoke test. |
-| [Macro/ECL experiments](src/credit_one/ecl/) | Separate research modules. Their bundled values are approximate demonstrations, and the complete pipeline has not been independently validated. |
-
-## Offline examples
-
-Run from the repository root with Python 3.9+ and NumPy, scikit-learn and pandas already installed. Neither command below calls a remote data service. Dependency installation is a separate setup step.
+Python 3.9+ is required; the complete supported checks were exercised on Python 3.9 and 3.12. Install from the repository root in a virtual environment:
 
 ```bash
-# Fit once on synthetic training rows; evaluate a separate 25% holdout.
-python src/credit_one/run.py demo --seed 42 --samples 1000 --output artifacts/demo_report.json
+python -m pip install ".[dev]"
 
-# Requires pandas: checks the bundled three-row CSV and applies a DTI formula.
+# Fit on synthetic training rows and evaluate a separate 25% holdout.
+credit-one demo --seed 42 --samples 1000 --output artifacts/demo_report.json
+
+# Apply the documented DTI heuristic to the bundled three-row example.
 python scripts/run_real.py data/sample_input.csv --output artifacts/csv_demo
 ```
 
-The first report records the seed, generation rule, train/test indices, fitted scaling parameters, software versions and held-out labels/probabilities. Its AUC, two-sided KS separation and Brier loss are calculated from those predictions. A constant training-event-rate predictor is included for comparison; no seed or parameter search is performed.
+The installed `credit-one` command works outside the checkout. The source entry point remains `python src/credit_one/run.py`. Reusing an existing demo-report filename fails without overwriting it. CSV runs receive unique IDs and create new files; an output collision also fails. Empty and non-finite CSV inputs are rejected before output is created.
 
-The features and event probabilities have no credit-business calibration. The random holdout evaluates IID simulated rows, not future economic periods. The second command is separate: it applies the unchanged DTI heuristic and identifies it as `heuristic_dti_formula_v1`, not XGBoost.
+Installation can access package indexes. The two examples above do not call a remote data service. Neither example is calibrated to borrower defaults or suitable for credit decisions.
 
-For the optional interface, the source-file location is:
+## What is implemented
+
+| Component | Supported scope |
+| --- | --- |
+| [Synthetic classification experiment](src/credit_one/synthetic_demo.py) | Independent normal features, logistic latent probabilities and sampled labels; train-only scaling and fitted logistic regression. Held-out AUC, two-sided KS and Brier loss are recomputable from saved predictions. |
+| [SME prototype](src/credit_one/sme_credit_explainability.py) | Configurable synthetic row count, boosting/SHAP components and a WoE/logistic scorecard. Complete tests exercise scoring, score range and a debt-ratio comparison. Legacy demonstration adjustments remain disclosed. |
+| [Metric utilities](src/credit_one/model_validation.py) | Metrics from caller-supplied labels and predictions. Reports refuse existing destinations and state that they are educational checks. The old standalone label-derived prediction demo has been disabled. |
+| [CSV heuristic](scripts/run_real.py) | Required-column and numeric checks, followed by an unchanged debt-to-income formula, explicitly labelled `heuristic_dti_formula_v1`. It does not fit or load XGBoost. |
+| [Optional dashboard](src/credit_one/app.py) | Experimental Streamlit interface. Install with `python -m pip install ".[dashboard]"`; launch with `credit-one dashboard`. Online actions and the UI are outside the offline acceptance suite. |
+| [Macro/ECL research](src/credit_one/ecl/) | Separate research modules. Dedicated ECL tests and CLI/dashboard integration remain incomplete in the [feature checklist](feature_checklist.json). |
+
+The synthetic experiment saves its generation rule, seed, train/test indices, fitted scaling parameters, library versions and held-out labels/probabilities. A constant training-event-rate predictor provides a reference. No seed or hyperparameter search is performed. A random IID holdout does not test future economic periods, calibration, fairness or deployment suitability.
+
+## Verification
 
 ```bash
-python src/credit_one/run.py dashboard --port 8501
+python -m pytest tests/ -v
+make lint
+python -m black --check .
+make verify
 ```
 
-The launcher invokes the actual `src/credit_one/app.py` with the current Python interpreter and propagates its process exit status. Install optional interface dependencies from `requirements.txt` separately. Market-data actions may access Yahoo Finance. The UI itself was not smoke-tested.
+On 2026-09-08, all **54 tests passed with zero skips** in isolated Python 3.9.25 and 3.12.12 environments. Ruff and Black passed without changing files. Wheel/editable installation, safe output behavior and the full verification entry point are recorded in [CI revalidation](docs/CI_REVALIDATION.md).
 
-## Verification status
+`make verify` runs the complete tests, code checks, configuration validation, fresh offline examples and wheel construction. It writes new evidence to a fresh temporary directory and never clears existing artifacts. Failures propagate as nonzero process statuses. With `python scripts/verify.py --output-dir <new-directory>`, an existing destination is rejected.
 
-On 2026-09-07, the synthetic experiment and CSV example ran with isolated output paths. Sixteen targeted tests passed, covering recomputable metrics, seed reproducibility, train-only preprocessing, CLI behavior and fresh CSV artifacts. This is a measured synthetic experiment, not evidence of real credit-model performance.
+The [CI workflow](.github/workflows/ci.yml) retains its `lint`, `test`, `e2e` and `verify` jobs. Its checks do not auto-fix files or suppress failures. The independent [Security workflow](.github/workflows/security.yml) retains the Git-history gitleaks scan. These local results are not a claim that a not-yet-published revision has passed remote Actions.
 
-The [Synthetic CLI checks](https://github.com/zheyuliu328/algorithmic-credit-risk-engine/actions/workflows/synthetic-demo.yml) workflow runs this targeted suite and publishes a fresh report. It is separate from the legacy full-project workflow.
+The separate [Synthetic CLI checks](.github/workflows/synthetic-demo.yml) workflow continues to exercise the smaller offline subset. It is not a replacement for the full suite.
 
-`validate` remains unimplemented and now exits nonzero without producing a report, including with `--dry-run`. Legacy scorecard tests still fail during import, and their generator arguments need alignment. The old standalone metric example also has a NumPy compatibility failure. See [Portfolio status](docs/PORTFOLIO_STATUS.md) for the remaining gaps.
+## Boundaries that remain
 
-```bash
-python -m pytest -p no:cacheprovider tests/test_cli_demo.py tests/test_e2e.py tests/test_basic.py
-```
+- `validate`, including `validate --dry-run`, exits 2 without reporting success. The standalone `model_validation.py` entry also exits 2 rather than constructing predictions from labels. A supplied-model validation workflow is still required.
+- Legacy SME/VIP and large-company adjustments are demonstration rules. Their adjusted probabilities must not be used as untouched model-evaluation evidence.
+- The existing PSI implementation uses finite baseline quantile endpoints. Out-of-range observations can fall outside its histogram, and its fixed 0.1/0.25 interpretation bands are heuristics. Those model-methodology limitations were not hidden by the CI repair.
+- Legacy CAP/Gini and assessment thresholds remain research utilities; their historical definitions were preserved. Passing software tests does not certify those definitions or financial conclusions.
+- The Lending Club loader still refers to a machine-specific cache path. Approximate macro tables are demonstrations, not verified FRED downloads; credit-card delinquency is not borrower default incidence.
+- Optional online data access, dashboard rendering, chronological validation and complete ECL methodology remain outside this acceptance scope.
 
-Fixed AUC, accuracy, training-time and inference-time tables from older documentation should not be read as measured results. Historical passing badges and legacy examples are not a substitute for a reproducible test run.
+See [Portfolio status](docs/PORTFOLIO_STATUS.md), [limitations](docs/limitations.md), [CSV format](docs/real-data.md) and the [MIT code license](LICENSE). Historical architecture/quickstart documents may retain old paths or aspirational examples; this README and the dated revalidation record describe current acceptance.
 
-## Data and methodology boundaries
-
-- The new offline experiment uses a separate generator with no special-case IDs or prediction overrides. The older SME generator still contains demonstration adjustments; its returned predictions are not an untouched evaluation output.
-- `data/sample_input.csv` is a tiny bundled example without outcome labels. It cannot support an AUC or model-validation conclusion.
-- The legacy Lending Club loader refers to a public Kaggle dataset through a machine-specific cache path. That path is not portable; external data retrieval and licensing were not verified in this audit.
-- The macro-data generator describes its table as approximate values based on historical FRED patterns. Do not describe that bundle as a verified FRED download. Its credit-card delinquency proxy is not a measured borrower default-rate series.
-- Optional public-data integrations require their own source, version, retrieval and usage documentation. The repository's code license does not establish rights to redistribute third-party data.
-
-No production, regulatory-compliance, credit-approval or investment-performance claim follows from these examples. [Project limitations](docs/limitations.md) and [legal scope](docs/legal.md) remain applicable.
-
-## Next acceptance milestones
-
-1. Implement a genuine supplied-model validation workflow before enabling `validate`.
-2. Repair legacy imports/generator signatures and align optional dependencies; pass the complete test suite in a clean environment.
-3. Keep the legacy metric illustrations and adjusted predictions distinct from fitted-model evaluation.
-4. Establish external-data provenance and suitable validation before publishing any real-data performance claim.
-
-## Navigation
-
-- [Portfolio status and audit evidence](docs/PORTFOLIO_STATUS.md)
-- [Source modules](src/credit_one/)
-- [CSV input format](docs/real-data.md)
-- [Limitations](docs/limitations.md)
-- [MIT code license](LICENSE)
-
-Start with this page and the status record. Other architecture and quickstart documents contain historical examples and may use old paths or aspirational descriptions.
+For a separate experiment using fully synthetic time-series data, see [model-risk-lab](https://github.com/zheyuliu328/model-risk-lab). Its results do not retroactively validate this repository.

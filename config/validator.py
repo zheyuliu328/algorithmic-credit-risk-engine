@@ -2,10 +2,11 @@
 Config Validator - Configuration schema validation
 """
 
+from pathlib import Path
+from typing import Any, Dict, Optional
+
 import jsonschema
 import yaml
-from pathlib import Path
-from typing import Dict, Any, Optional
 
 CONFIG_SCHEMA = {
     "type": "object",

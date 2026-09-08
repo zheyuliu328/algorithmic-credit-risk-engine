@@ -20,10 +20,11 @@ FRED series IDs:
 """
 
 import os
-import numpy as np
-import pandas as pd
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
+import pandas as pd
 
 # 项目 data 目录下的打包历史数据
 _BUNDLED_CSV = Path(__file__).resolve().parents[3] / "data" / "us_macro_quarterly.csv"
@@ -112,12 +113,14 @@ class FREDDataLoader:
         delinq = delinq / 100.0
 
         # 对齐到共同日期范围
-        df = pd.DataFrame({
-            "gdp_growth": gdp,
-            "unemployment_rate": unemp,
-            "interest_rate": ffr,
-            "observed_default_rate": delinq,
-        })
+        df = pd.DataFrame(
+            {
+                "gdp_growth": gdp,
+                "unemployment_rate": unemp,
+                "interest_rate": ffr,
+                "observed_default_rate": delinq,
+            }
+        )
         df = df.dropna()
         df = df.reset_index()
         df = df.rename(columns={"index": "date"})
@@ -177,13 +180,15 @@ class MacroDataGenerator:
         logit_dr += self.rng.normal(0, 0.1, n)
         observed_default_rate = 1.0 / (1.0 + np.exp(-logit_dr))
 
-        df = pd.DataFrame({
-            "date": quarters,
-            "gdp_growth": np.round(gdp, 4),
-            "unemployment_rate": np.round(unemployment, 4),
-            "interest_rate": np.round(interest, 4),
-            "observed_default_rate": np.round(observed_default_rate, 6),
-        })
+        df = pd.DataFrame(
+            {
+                "date": quarters,
+                "gdp_growth": np.round(gdp, 4),
+                "unemployment_rate": np.round(unemployment, 4),
+                "interest_rate": np.round(interest, 4),
+                "observed_default_rate": np.round(observed_default_rate, 6),
+            }
+        )
         return df
 
 

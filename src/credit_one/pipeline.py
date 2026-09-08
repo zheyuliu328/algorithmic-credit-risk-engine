@@ -8,17 +8,20 @@ Architecture:
 - Analytics: Python handles statistical modeling only
 """
 
-import sqlite3
-import pandas as pd
-import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score, classification_report
 import os
+import sqlite3
 import sys
 
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.model_selection import train_test_split
+
 # Configuration
-REAL_DATA_PATH = "/Users/zheyuliu/.cache/kagglehub/datasets/wordsforthewise/lending-club/versions/3/accepted_2007_to_2018q4.csv/accepted_2007_to_2018Q4.csv"
+REAL_DATA_PATH = (
+    "/Users/zheyuliu/.cache/kagglehub/datasets/wordsforthewise/lending-club/versions/3/"
+    "accepted_2007_to_2018q4.csv/accepted_2007_to_2018Q4.csv"
+)
 DB_NAME = "bank_risk_elt.db"
 SQL_SCRIPT = "transform_logic.sql"
 
@@ -47,7 +50,8 @@ def step1_extract_and_load(conn, n_samples=50000):
         print(f"❌ Error: Data file not found at {REAL_DATA_PATH}")
         print("Please download the dataset first:")
         print(
-            "  python -c \"import kagglehub; kagglehub.dataset_download('wordsforthewise/lending-club')\""
+            '  python -c "import kagglehub; '
+            "kagglehub.dataset_download('wordsforthewise/lending-club')\""
         )
         sys.exit(1)
 
@@ -69,7 +73,7 @@ def step1_extract_and_load(conn, n_samples=50000):
     df_raw.to_sql("raw_landing_zone", conn, if_exists="replace", index=False)
     conn.commit()
 
-    print(f"✅ Raw data loaded into 'raw_landing_zone' table")
+    print("✅ Raw data loaded into 'raw_landing_zone' table")
     print(f"   Columns: {', '.join(df_raw.columns[:10].tolist())}... ({len(df_raw.columns)} total)")
 
     return conn
@@ -121,7 +125,8 @@ def step2_transform_sql(conn):
 
     # Verify tables/views were created
     cursor.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('clean_loans', 'raw_landing_zone')"
+        "SELECT name FROM sqlite_master WHERE type='table' "
+        "AND name IN ('clean_loans', 'raw_landing_zone')"
     )
     tables = cursor.fetchall()
     print(f"   Created tables: {[t[0] for t in tables]}")
@@ -145,7 +150,7 @@ def step3_modeling(conn):
     # Pull engineered features from SQL view
     print("📊 Fetching engineered features from SQL view 'model_features'...")
     query = """
-    SELECT 
+    SELECT
         loan_id,
         dti_ratio,
         CASE credit_bucket
@@ -197,9 +202,9 @@ def step3_modeling(conn):
 
     # Model performance
     auc = roc_auc_score(y_test, y_pred_proba)
-    print(f"✅ Model trained")
+    print("✅ Model trained")
     print(f"   Test AUC: {auc:.4f}")
-    print(f"\n   Classification Report:")
+    print("\n   Classification Report:")
     print(
         classification_report(
             y_test, y_pred, target_names=["No Default", "Default"], zero_division=0
@@ -240,7 +245,7 @@ def step4_ifrs9_staging_sql(conn):
     # Create staging table using SQL
     staging_query = """
     CREATE TABLE IF NOT EXISTS loan_staging AS
-    SELECT 
+    SELECT
         mf.loan_id,
         mf.loan_amount,
         mf.default_flag,
@@ -248,22 +253,23 @@ def step4_ifrs9_staging_sql(conn):
         mf.fico_score,
         lp.pd_12m,
         lp.pd_lifetime,
-        
+
         -- IFRS 9 Stage Assignment (SQL CASE WHEN logic)
-        CASE 
+        CASE
             WHEN mf.default_flag = 1 THEN 3  -- Stage 3: Defaulted
             WHEN lp.pd_12m >= 0.02 THEN 2     -- Stage 2: Significant increase in credit risk
             ELSE 1                             -- Stage 1: Performing
         END AS stage,
-        
+
         -- ECL Calculation: PD × LGD × EAD
         -- LGD = 0.45 (45% loss given default)
-        CASE 
+        CASE
             WHEN mf.default_flag = 1 THEN mf.loan_amount * 0.45  -- Stage 3: Full ECL
-            WHEN lp.pd_12m >= 0.02 THEN mf.loan_amount * lp.pd_lifetime * 0.45  -- Stage 2: Lifetime ECL
+            -- Stage 2: Lifetime ECL
+            WHEN lp.pd_12m >= 0.02 THEN mf.loan_amount * lp.pd_lifetime * 0.45
             ELSE mf.loan_amount * lp.pd_12m * 0.45 * 0.5  -- Stage 1: 12-month ECL (simplified)
         END AS ecl
-        
+
     FROM model_features mf
     INNER JOIN loan_predictions lp ON mf.loan_id = lp.loan_id
     """
@@ -277,7 +283,7 @@ def step4_ifrs9_staging_sql(conn):
     # Show stage distribution
     stage_dist = pd.read_sql(
         """
-        SELECT 
+        SELECT
             stage,
             CASE stage
                 WHEN 1 THEN 'Stage 1: Performing'
@@ -312,7 +318,7 @@ def step5_reporting(conn):
     # Portfolio summary
     portfolio_summary = pd.read_sql(
         """
-        SELECT 
+        SELECT
             stage,
             CASE stage
                 WHEN 1 THEN 'Stage 1: Performing'
@@ -337,7 +343,7 @@ def step5_reporting(conn):
     # Overall metrics
     overall = pd.read_sql(
         """
-        SELECT 
+        SELECT
             COUNT(*) AS total_loans,
             ROUND(SUM(loan_amount), 2) AS total_exposure,
             ROUND(SUM(ecl), 2) AS total_ecl,
@@ -396,7 +402,8 @@ def main():
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] in ["-h", "--help"]:
-        print("""
+        print(
+            """
 IFRS 9 ECL Pipeline - ELT Architecture
 
 Usage:
@@ -410,6 +417,7 @@ Architecture:
   - Extract & Load: Python moves raw CSV to database (no transformation)
   - Transform: All cleaning/feature engineering in SQL (transform_logic.sql)
   - Analytics: Python handles statistical modeling only
-        """)
+        """
+        )
         sys.exit(0)
     main()

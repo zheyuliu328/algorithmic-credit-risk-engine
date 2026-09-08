@@ -13,8 +13,12 @@ def main(argv=None):
     subparsers = parser.add_subparsers(dest="command")
 
     demo = subparsers.add_parser("demo", help="Run an offline synthetic classification experiment")
-    demo.add_argument("--seed", type=int, default=42, help="Simulation and split seed (default: 42)")
-    demo.add_argument("--samples", type=int, default=1000, help="Synthetic sample count (minimum: 100)")
+    demo.add_argument(
+        "--seed", type=int, default=42, help="Simulation and split seed (default: 42)"
+    )
+    demo.add_argument(
+        "--samples", type=int, default=1000, help="Synthetic sample count (minimum: 100)"
+    )
     demo.add_argument("--output", "-o", default="artifacts/demo_report.json")
 
     validate = subparsers.add_parser("validate", help="Reserved; not implemented (exits nonzero)")
@@ -47,14 +51,19 @@ def run_demo(args):
     else:
         from synthetic_demo import run_experiment
 
+    output = Path(args.output)
+    if output.exists():
+        raise FileExistsError(f"Output already exists: {output}")
     report = run_experiment(seed=args.seed, n_samples=args.samples)
     serialized = json.dumps(report, indent=2, allow_nan=False) + "\n"
-    output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(serialized, encoding="utf-8")
+    with output.open("x", encoding="utf-8") as destination:
+        destination.write(serialized)
     metrics = report["metrics"]
     print(f"Synthetic classification demo: seed={args.seed}, samples={args.samples}")
-    print(f"Held-out AUC={metrics['auc']:.6f}, KS={metrics['ks']:.6f}, Brier={metrics['brier']:.6f}")
+    print(
+        f"Held-out AUC={metrics['auc']:.6f}, KS={metrics['ks']:.6f}, Brier={metrics['brier']:.6f}"
+    )
     print(f"Report saved: {output}")
     print("Educational simulation; these are not calibrated credit-risk estimates.")
     return report

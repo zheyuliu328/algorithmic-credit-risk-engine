@@ -9,9 +9,10 @@ Outputs:
 - Lifetime ECL (Stage 2): Cumulative PD over remaining life × LGD × EAD
 """
 
+from typing import Dict, List, Optional
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
 
 from credit_one.ecl.pd_forward_model import PDForwardModel
 from credit_one.ecl.scenario_engine import ScenarioEngine
@@ -166,7 +167,9 @@ class ECLCalculator:
             pds_arr = np.asarray(pds, dtype=float)
             scenario_cum_pd = self._cumulative_pd(pds_arr)
             scenario_ecl_lt = np.sum(pds_arr * discount_factors) * lgd * ead * weight
-            scenario_ecl_12m = np.sum(pds_arr[:n_12m] * discount_factors[:n_12m]) * lgd * ead * weight
+            scenario_ecl_12m = (
+                np.sum(pds_arr[:n_12m] * discount_factors[:n_12m]) * lgd * ead * weight
+            )
             contributions[name] = {
                 "weight": weight,
                 "ecl_12m_contribution": round(scenario_ecl_12m, 2),
@@ -218,9 +221,7 @@ class ECLCalculator:
             # 至少提供一个等权配置
             weight_shifts = [{name: equal_w for name in scenario_names}]
             # 修正末位使总和为 1
-            weight_shifts[0][scenario_names[-1]] = round(
-                1.0 - equal_w * (n_scenarios - 1), 4
-            )
+            weight_shifts[0][scenario_names[-1]] = round(1.0 - equal_w * (n_scenarios - 1), 4)
 
         rows = []
         for i, weights in enumerate(weight_shifts):

@@ -8,14 +8,15 @@ This pipeline simulates a real banking environment where:
 - Results are stored and processed in SQL for auditability
 """
 
-import sqlite3
-import pandas as pd
-import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score, classification_report
 import os
+import sqlite3
 import sys
+
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, roc_auc_score
+from sklearn.model_selection import train_test_split
 
 # Database configuration
 DB_NAME = "credit_risk.db"
@@ -121,7 +122,7 @@ def step2_sql_feature_engineering(conn):
     # This demonstrates SQL CASE WHEN for categorical binning
     create_features_query = """
     CREATE TABLE model_features AS
-    SELECT 
+    SELECT
         loan_id,
         income,
         total_debt,
@@ -131,7 +132,7 @@ def step2_sql_feature_engineering(conn):
         -- Feature Engineering: Calculate DTI Ratio
         ROUND(total_debt / NULLIF(income, 0), 4) AS dti_ratio,
         -- Feature Engineering: FICO Score Bucketing (WoE-style binning)
-        CASE 
+        CASE
             WHEN fico_score < 580 THEN 'Poor'
             WHEN fico_score < 670 THEN 'Fair'
             WHEN fico_score < 740 THEN 'Good'
@@ -139,7 +140,7 @@ def step2_sql_feature_engineering(conn):
         END AS fico_category,
         -- Additional features
         ROUND(loan_amount / NULLIF(income, 0), 4) AS loan_to_income_ratio,
-        CASE 
+        CASE
             WHEN loan_amount > 50000 THEN 'Large'
             WHEN loan_amount > 20000 THEN 'Medium'
             ELSE 'Small'
@@ -157,7 +158,7 @@ def step2_sql_feature_engineering(conn):
     # Show sample of engineered features
     sample = pd.read_sql(
         """
-        SELECT 
+        SELECT
             loan_id,
             dti_ratio,
             fico_category,
@@ -185,7 +186,7 @@ def step3_python_modeling(conn):
 
     # Pull data from SQL
     query = """
-    SELECT 
+    SELECT
         dti_ratio,
         CASE fico_category
             WHEN 'Poor' THEN 0
@@ -225,9 +226,9 @@ def step3_python_modeling(conn):
 
     # Model performance
     auc = roc_auc_score(y_test, y_pred_proba)
-    print(f"\n✓ Model trained successfully")
+    print("\n✓ Model trained successfully")
     print(f"  Test AUC: {auc:.4f}")
-    print(f"\n  Classification Report:")
+    print("\n  Classification Report:")
     print(classification_report(y_test, y_pred, target_names=["No Default", "Default"]))
 
     # Calculate PD for all loans
@@ -266,23 +267,24 @@ def step4_sql_post_processing_staging(conn):
     # CRITICAL: All staging logic is done in SQL, not Pandas
     staging_query = """
     CREATE TABLE loan_staging AS
-    SELECT 
+    SELECT
         mf.loan_id,
         mf.loan_amount,
         mf.default_flag,
         lp.pd,
         -- IFRS 9 Stage Assignment (SQL CASE WHEN logic)
-        CASE 
+        CASE
             WHEN mf.default_flag = 1 THEN 3  -- Stage 3: Defaulted
             WHEN lp.pd >= 0.02 THEN 2        -- Stage 2: Significant increase in credit risk
             ELSE 1                            -- Stage 1: Performing
         END AS stage,
         -- ECL Calculation (simplified: PD * LGD * EAD)
         -- Assumptions: LGD = 0.45 (45% loss given default), EAD = loan_amount
-        CASE 
+        CASE
             WHEN mf.default_flag = 1 THEN mf.loan_amount * 0.45  -- Stage 3: Full ECL
             WHEN lp.pd >= 0.02 THEN mf.loan_amount * lp.pd * 0.45  -- Stage 2: Lifetime ECL
-            ELSE mf.loan_amount * lp.pd * 0.45 * 0.5  -- Stage 1: 12-month ECL (simplified as 50% of lifetime)
+            -- Stage 1: 12-month ECL (simplified as 50% of lifetime)
+            ELSE mf.loan_amount * lp.pd * 0.45 * 0.5
         END AS ecl
     FROM model_features mf
     INNER JOIN loan_predictions lp ON mf.loan_id = lp.loan_id
@@ -298,7 +300,7 @@ def step4_sql_post_processing_staging(conn):
     # Show stage distribution
     stage_dist = pd.read_sql(
         """
-        SELECT 
+        SELECT
             stage,
             COUNT(*) AS loan_count,
             ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM loan_staging), 2) AS pct,
@@ -317,7 +319,7 @@ def step4_sql_post_processing_staging(conn):
     # Show sample staging results
     sample = pd.read_sql(
         """
-        SELECT 
+        SELECT
             loan_id,
             loan_amount,
             pd,
@@ -349,7 +351,7 @@ def step5_reporting(conn):
     # Portfolio-level ECL summary
     portfolio_summary = pd.read_sql(
         """
-        SELECT 
+        SELECT
             stage,
             CASE stage
                 WHEN 1 THEN 'Stage 1: Performing'
@@ -374,7 +376,7 @@ def step5_reporting(conn):
     # Overall portfolio metrics
     overall = pd.read_sql(
         """
-        SELECT 
+        SELECT
             COUNT(*) AS total_loans,
             ROUND(SUM(loan_amount), 2) AS total_exposure,
             ROUND(SUM(ecl), 2) AS total_ecl,
@@ -392,7 +394,7 @@ def step5_reporting(conn):
     # Top 10 highest ECL loans
     top_ecl = pd.read_sql(
         """
-        SELECT 
+        SELECT
             loan_id,
             loan_amount,
             pd,
@@ -455,7 +457,8 @@ def main():
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] in ["-h", "--help"]:
-        print("""
+        print(
+            """
 IFRS 9 ECL Pipeline - Usage
 
 Options:
@@ -467,6 +470,7 @@ Examples:
   python main.py                          # Use synthetic data (10k samples)
   python main.py --real-data               # Use real Lending Club data (10k samples)
   python main.py --real-data --samples 50000  # Use real data with 50k samples
-        """)
+        """
+        )
         sys.exit(0)
     main()
